@@ -8,7 +8,6 @@ import OBR from "./obr-sdk.bundle.js";
 
 const THEME_KEY = "mothership-sheet-theme"; // "light" | "dark"
 const VIEW_KEY = "mothership-sheet-view"; // "advanced" | "basic"
-const FONT_SCALE_KEY = "mothership-sheet-font-scale";
 const LOCAL_ROOM_KEY = "mothership-sheet-room"; // standalone/local-preview fallback
 
 const ROOM_KEYS = {
@@ -328,23 +327,6 @@ function toggleTheme() {
 }
 applyTheme();
 
-// ---------- font size scaling (per-viewer, everyone picks their own — same pattern as
-// the Mist sheet's font-scale toggle) ----------
-const FONT_SCALE_STEPS = [13, 15, 17, 19, 21]; // px; index 1 (15px) matches the base size
-let fontScaleIndex = (() => {
-  const saved = parseInt(localStorage.getItem(FONT_SCALE_KEY), 10);
-  return Number.isInteger(saved) && saved >= 0 && saved < FONT_SCALE_STEPS.length ? saved : 1;
-})();
-function applyFontScale() {
-  document.documentElement.style.fontSize = FONT_SCALE_STEPS[fontScaleIndex] + "px";
-}
-function adjustFontScale(delta) {
-  fontScaleIndex = Math.max(0, Math.min(FONT_SCALE_STEPS.length - 1, fontScaleIndex + delta));
-  localStorage.setItem(FONT_SCALE_KEY, String(fontScaleIndex));
-  applyFontScale();
-}
-applyFontScale();
-
 function isGM() {
   // Outside Owlbear there's no room/role concept, so GM-only tabs stay visible in
   // standalone/local-preview mode to make it possible to test them.
@@ -614,12 +596,6 @@ function renderTopbar() {
     }),
   ]);
   controls.appendChild(viewToggle);
-  controls.appendChild(
-    el("button", { class: "icon-btn", title: "Decrease font size", text: "A−", onclick: () => adjustFontScale(-1) })
-  );
-  controls.appendChild(
-    el("button", { class: "icon-btn", title: "Increase font size", text: "A+", onclick: () => adjustFontScale(1) })
-  );
   controls.appendChild(
     el("button", { class: "icon-btn", title: "Toggle dark mode", onclick: toggleTheme }, [themeIcon()])
   );
@@ -946,25 +922,31 @@ function savesPanelAdvanced(character, save) {
 }
 
 function renderCharacterSheetAdvanced(character, save) {
-  const wrap = el("div", { class: "layout-two-col" });
-  const left = el("div", { class: "stack" });
-  left.appendChild(personalDetailsPanelAdvanced(character, save));
-  left.appendChild(classPanelAdvanced(character, save));
-  left.appendChild(statsPanelAdvanced(character, save));
-  left.appendChild(savesPanelAdvanced(character, save));
+  const wrap = el("div", { class: "advanced-three-col" });
 
+  // Column 1: identity. Column 2: the numeric "vitals". Column 3: skills & loadout —
+  // three roughly-even columns so the whole sheet fits without scrolling, rather than
+  // one tall narrow sidebar plus one tall wide column.
+  const col1 = el("div", { class: "stack" });
+  col1.appendChild(personalDetailsPanelAdvanced(character, save));
+  col1.appendChild(classPanelAdvanced(character, save));
+
+  const col2 = el("div", { class: "stack" });
+  col2.appendChild(statsPanelAdvanced(character, save));
+  col2.appendChild(savesPanelAdvanced(character, save));
   const statusPanel = el("div", { class: "panel" });
   statusPanel.appendChild(el("div", { class: "panel-header", text: "Status Report" }));
   statusPanel.appendChild(el("div", { class: "panel-body" }, [statusReportSection(character, save)]));
-  left.appendChild(statusPanel);
+  col2.appendChild(statusPanel);
 
-  const right = el("div", { class: "stack" });
-  right.appendChild(skillListAdvanced(character, save));
-  right.appendChild(equipmentPanel(character, save));
-  right.appendChild(weaponsPanel(character, save));
+  const col3 = el("div", { class: "stack" });
+  col3.appendChild(skillListAdvanced(character, save));
+  col3.appendChild(equipmentPanel(character, save));
+  col3.appendChild(weaponsPanel(character, save));
 
-  wrap.appendChild(left);
-  wrap.appendChild(right);
+  wrap.appendChild(col1);
+  wrap.appendChild(col2);
+  wrap.appendChild(col3);
   return wrap;
 }
 
@@ -1123,7 +1105,7 @@ function equipmentStepPanel(character, save) {
 
 function renderCharacterSheetBasic(character, save) {
   const wrap = el("div");
-  const cols = el("div", { class: "two-col-equal" });
+  const cols = el("div", { class: "basic-outer-cols" });
 
   // Left column — matches the source sheet's left half: identity + Stats/Saves side by
   // side at the top, then the numbered creation steps 3-6 and step 8's loadout.
