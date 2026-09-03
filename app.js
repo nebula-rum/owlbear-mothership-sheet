@@ -1108,7 +1108,7 @@ function renderCharacterSheetBasic(character, save) {
   const cols = el("div", { class: "basic-outer-cols" });
 
   // Left column — matches the source sheet's left half: identity + Stats/Saves side by
-  // side at the top, then the numbered creation steps 3-6 and step 8's loadout.
+  // side at the top, then the numbered creation steps 3-6.
   const left = el("div", { class: "stack" });
 
   const header = el("div", { class: "panel" });
@@ -1145,12 +1145,12 @@ function renderCharacterSheetBasic(character, save) {
   left.appendChild(healthStressRow);
 
   left.appendChild(traumaStepPanel(character));
-  left.appendChild(equipmentStepPanel(character, save));
 
-  // Right column — the full skill tree (step 7), plus Skill Training and Conditions
-  // which sit below it on the source sheet's right half.
+  // Right column — the full skill tree (step 7), then step 8's loadout below it, then
+  // Conditions and Skill Training which sit below on the source sheet's right half.
   const right = el("div", { class: "stack" });
   right.appendChild(skillTreeStepPanel(character, save));
+  right.appendChild(equipmentStepPanel(character, save));
 
   const conditionsPanel = el("div", { class: "panel" });
   conditionsPanel.appendChild(el("div", { class: "panel-header", text: "Conditions" }));
