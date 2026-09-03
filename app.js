@@ -238,6 +238,57 @@ function showConfirmDialog(message, onConfirm) {
   document.body.appendChild(overlay);
 }
 
+/* ---------- personal notes editor (a much larger writing surface than fits inline) ---------- */
+let activeNotesClose = null;
+function closeNotesEditor() {
+  if (activeNotesClose) activeNotesClose();
+}
+function openNotesEditor(character, save) {
+  closeConfirmDialog();
+  closeNotesEditor();
+  const overlay = el("div", { class: "confirm-overlay" });
+  const box = el("div", { class: "confirm-box notes-box" });
+  box.appendChild(el("div", { class: "notes-box-title", text: "Personal Notes" }));
+  const area = el("textarea", {
+    class: "field-textarea notes-box-textarea",
+    oninput: (e) => { character.personalNotes = e.target.value; save(); },
+  });
+  area.value = character.personalNotes || "";
+  box.appendChild(area);
+  const actions = el("div", { class: "confirm-actions" });
+
+  function onKey(e) {
+    if (e.key === "Escape") close();
+  }
+  function close() {
+    document.removeEventListener("keydown", onKey);
+    overlay.remove();
+    if (activeNotesClose === close) activeNotesClose = null;
+    refreshTabContent();
+  }
+  activeNotesClose = close;
+
+  actions.appendChild(el("button", { class: "btn primary", text: "Done", onclick: close }));
+  box.appendChild(actions);
+  overlay.appendChild(box);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+  document.addEventListener("keydown", onKey);
+  document.body.appendChild(overlay);
+  area.focus();
+}
+function personalNotesLink(character, save) {
+  return el("button", {
+    type: "button",
+    class: "notes-link",
+    onclick: () => openNotesEditor(character, save),
+  }, [
+    "Personal Notes",
+    character.personalNotes ? el("span", { class: "notes-link-badge", text: "✓" }) : el("span", { class: "notes-link-arrow", text: "→" }),
+  ]);
+}
+
 /* =========================================================================
    Runtime state
    ========================================================================= */
@@ -478,6 +529,7 @@ function toggleCharacterSkill(character, save, skillId, tier) {
    ========================================================================= */
 function renderApp() {
   closeConfirmDialog();
+  closeNotesEditor();
   app.innerHTML = "";
 
   if (backend === "standalone") {
@@ -717,19 +769,31 @@ function renderLineList(character, save, key, opts) {
     );
     wrap.appendChild(row);
   });
-  const addBtn = el("button", {
-    class: "add-row-btn",
-    text: "+ Add " + (opts.singular || "item"),
-    onclick: () => {
-      character[key].push({ id: uid(), text: "" });
-      save();
-      refreshTabContent();
-    },
-  });
   const outer = el("div");
   outer.appendChild(wrap);
-  outer.appendChild(addBtn);
+  if (!opts.hideAddButton) {
+    outer.appendChild(
+      el("button", {
+        class: "add-row-btn",
+        text: "+ Add " + (opts.singular || "item"),
+        onclick: () => {
+          character[key].push({ id: uid(), text: "" });
+          save();
+          refreshTabContent();
+        },
+      })
+    );
+  }
   return outer;
+}
+// A list's title on the left, a small "+" button right-aligned on the same line —
+// used where a section header should double as the add-item control (Basic view's
+// step 8), instead of a dashed "+ Add ..." button sitting below the list.
+function lineListSectionHeader(title, onAdd) {
+  return el("div", { class: "list-section-header" }, [
+    el("span", { text: title }),
+    el("button", { type: "button", class: "list-add-btn", title: "Add " + title.toLowerCase(), onclick: onAdd }, ["+"]),
+  ]);
 }
 
 function statusReportSection(character, save) {
@@ -787,25 +851,18 @@ function personalDetailsPanelAdvanced(character, save) {
   const wrap = el("div", { class: "panel personal-details-panel" });
   wrap.appendChild(el("div", { class: "panel-header", text: "Personal Details" }));
   const body = el("div", { class: "panel-body" });
-  body.appendChild(el("div", { class: "portrait-box", text: "No portrait" }));
-  const fields = el("div");
-  fields.appendChild(textField("Character Name", character.name, (v) => { character.name = v; save(); }));
+  body.appendChild(textField("Character Name", character.name, (v) => { character.name = v; save(); }));
   const row2 = el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:12px;" });
   row2.appendChild(textField("Pronouns", character.pronouns, (v) => { character.pronouns = v; save(); }));
   row2.appendChild(textField("Player Name", character.playerName, (v) => { character.playerName = v; save(); }));
-  fields.appendChild(row2);
+  body.appendChild(row2);
   const row3 = el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:12px;" });
   row3.appendChild(textField("Trinket", character.trinket, (v) => { character.trinket = v; save(); }));
   row3.appendChild(textField("Patch", character.patch, (v) => { character.patch = v; save(); }));
-  fields.appendChild(row3);
-  fields.appendChild(textField("High Score", character.highScore, (v) => { character.highScore = v; save(); }));
-  body.appendChild(fields);
+  body.appendChild(row3);
+  body.appendChild(textField("High Score", character.highScore, (v) => { character.highScore = v; save(); }));
+  body.appendChild(personalNotesLink(character, save));
   wrap.appendChild(body);
-  wrap.appendChild(
-    el("div", { class: "dark-block panel-body tight", style: "grid-template-columns:1fr;" }, [
-      textAreaField("Personal Notes", character.personalNotes, (v) => { character.personalNotes = v; save(); }, { tall: true }),
-    ])
-  );
   return wrap;
 }
 function classPanelAdvanced(character, save) {
@@ -1041,10 +1098,18 @@ function skillTreeStepPanel(character, save) {
 // in sync; the two views are just two renderings of the same data.
 function equipmentStepPanel(character, save) {
   return stepPanel(8, "Roll for Your Equipment Loadout, Trinket & Patch", [
-    el("div", { class: "field-label", text: "Equipment" }),
-    renderLineList(character, save, "equipment", { singular: "item", placeholder: "Equipment item…" }),
-    el("div", { class: "field-label", style: "margin-top:14px;", text: "Weapons" }),
-    renderLineList(character, save, "weapons", { singular: "weapon", placeholder: "Weapon…" }),
+    lineListSectionHeader("Equipment", () => {
+      character.equipment.push({ id: uid(), text: "" });
+      save();
+      refreshTabContent();
+    }),
+    renderLineList(character, save, "equipment", { singular: "item", placeholder: "Equipment item…", hideAddButton: true }),
+    lineListSectionHeader("Weapons", () => {
+      character.weapons.push({ id: uid(), text: "" });
+      save();
+      refreshTabContent();
+    }),
+    renderLineList(character, save, "weapons", { singular: "weapon", placeholder: "Weapon…", hideAddButton: true }),
     el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;" }, [
       textField("Trinket", character.trinket, (v) => { character.trinket = v; save(); }),
       textField("Patch", character.patch, (v) => { character.patch = v; save(); }),
@@ -1066,22 +1131,17 @@ function renderCharacterSheetBasic(character, save) {
 
   const header = el("div", { class: "panel" });
   header.appendChild(el("div", { class: "panel-header", text: "Personal Details" }));
-  const headerBody = el("div", { class: "dark-block panel-body", style: "display:flex;flex-direction:column;gap:10px;" });
+  const headerBody = el("div", { class: "dark-block panel-body" });
   headerBody.appendChild(textField("Character Name", character.name, (v) => { character.name = v; save(); }));
-  const identityRow2 = el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:12px;" });
-  identityRow2.appendChild(textField("Pronouns", character.pronouns, (v) => { character.pronouns = v; save(); }));
-  identityRow2.appendChild(textField("Player Name", character.playerName, (v) => { character.playerName = v; save(); }));
-  headerBody.appendChild(identityRow2);
+  headerBody.appendChild(textField("Pronouns", character.pronouns, (v) => { character.pronouns = v; save(); }));
+  headerBody.appendChild(textField("Player Name", character.playerName, (v) => { character.playerName = v; save(); }));
+  headerBody.appendChild(personalNotesLink(character, save));
   header.appendChild(headerBody);
-  header.appendChild(
-    el("div", { class: "dark-block panel-body tight", style: "grid-template-columns:1fr;" }, [
-      textAreaField("Personal Notes", character.personalNotes, (v) => { character.personalNotes = v; save(); }, { tall: true }),
-    ])
-  );
 
   // Personal Details sits to the left of Stats/Saves (stacked), matching the source
-  // sheet's top-left arrangement, each taking half of this column's width.
-  const identityAndStats = el("div", { class: "two-col-equal" });
+  // sheet's top-left arrangement. Personal Details only holds single-line fields now, so
+  // it gets a narrower share than Stats/Saves, which needs the room for its circles.
+  const identityAndStats = el("div", { class: "identity-stats-row" });
   identityAndStats.appendChild(header);
   const statsStack = el("div", { class: "stack" });
   statsStack.appendChild(stepPanel(1, "Roll 2d10+25 for each Stat", [statsAndSavesSectionStatsOnly(character, save, { compact: true })]));

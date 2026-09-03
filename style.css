@@ -430,6 +430,34 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
   font-weight: 700;
   cursor: pointer;
 }
+/* A list title with its "+" add control on the same line, right-aligned — used instead
+   of .add-row-btn where the list should read as a titled section, not a bare list. */
+.list-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.list-section-header:not(:first-child) { margin-top: 14px; }
+.list-add-btn {
+  border: 2px solid var(--border);
+  background: transparent;
+  color: var(--ink);
+  width: 20px; height: 20px;
+  border-radius: 6px;
+  line-height: 1;
+  font-size: 14px;
+  font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex: none;
+}
+.list-add-btn:hover { background: var(--muted-fill); }
 /* ---------- generic buttons ---------- */
 .btn {
   border: 2px solid var(--border);
@@ -481,20 +509,22 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
 @media (max-width: 560px) {
   .health-stress-row { grid-template-columns: 1fr; }
 }
+/* Personal Details only holds single-line fields (no portrait, no inline notes box
+   anymore), so it needs less room than Stats/Saves, which needs space for its circles. */
+.identity-stats-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 16px; align-items: start; }
+@media (max-width: 560px) {
+  .identity-stats-row { grid-template-columns: 1fr; }
+}
 .stack { display: flex; flex-direction: column; }
 
 /* ---------- personal details panel: solid dark block, matching the source sheet ---------- */
 .dark-block,
 .personal-details-panel .panel-body {
-  display: grid;
-  grid-template-columns: 96px 1fr;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   background: var(--ink);
   color: var(--bg);
-}
-@media (max-width: 380px) {
-  .dark-block,
-.personal-details-panel .panel-body { grid-template-columns: 1fr; }
 }
 .dark-block .field-label,
 .personal-details-panel .field-label { color: var(--bg); opacity: 0.65; }
@@ -509,17 +539,37 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
 .dark-block select.field-input option,
 .personal-details-panel select.field-input option { color: var(--ink); }
 
-.portrait-box {
-  background: color-mix(in srgb, var(--bg) 12%, var(--ink));
+/* ---------- personal notes link (opens the notes overlay editor) ---------- */
+.notes-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: transparent;
   border: none;
-  border-radius: 8px;
-  aspect-ratio: 3 / 4;
-  display: flex; align-items: center; justify-content: center;
+  border-top: 1px solid color-mix(in srgb, var(--bg) 25%, transparent);
   color: var(--bg);
-  opacity: 0.5;
-  font-size: 11px;
-  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 2px 2px;
+  margin-top: 2px;
+  cursor: pointer;
+  text-align: left;
 }
+.notes-link:hover { opacity: 0.8; }
+.notes-link-arrow, .notes-link-badge { opacity: 0.7; font-weight: 800; }
+
+/* ---------- personal notes overlay editor ---------- */
+.notes-box { width: min(560px, 92vw); }
+.notes-box-title {
+  font-family: "Poppins", system-ui, sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  margin-bottom: 10px;
+}
+.notes-box-textarea { min-height: min(50vh, 360px); }
 
 /* ---------- roster tab ---------- */
 .roster-item { border: 2px solid var(--muted-border); border-radius: 10px; margin-bottom: 8px; overflow: hidden; }
