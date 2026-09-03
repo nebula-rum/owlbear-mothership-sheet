@@ -133,6 +133,9 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   flex: none;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 0;
 }
 .icon-btn svg { width: 16px; height: 16px; }
 .view-toggle {
@@ -177,7 +180,8 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
   padding: 10px 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  text-align: center;
   gap: 8px;
 }
 .panel-header .btn.small { border-color: var(--bg); color: var(--bg); }
@@ -237,29 +241,57 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
 .stat-hint { font-size: 10px; color: var(--muted); text-align: center; max-width: 90px; }
 
 /* ---------- status pills (health / wounds / stress) ---------- */
-.pill-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; padding: 6px 0; }
-.pill-block { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.pill-row { display: flex; gap: 10px; flex-wrap: nowrap; justify-content: center; padding: 6px 0; }
+.pill-block { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
 .status-pill {
-  display: flex; align-items: center;
+  display: flex; align-items: stretch;
   border: 3px solid var(--border);
   border-radius: 999px;
   overflow: hidden;
   background: var(--panel);
 }
 .status-pill input {
-  width: 46px;
+  width: 34px;
   border: none;
   background: transparent;
   text-align: center;
   font-family: "Poppins", system-ui, sans-serif;
   font-weight: 800;
-  font-size: 16px;
-  padding: 8px 4px;
+  font-size: 15px;
+  padding: 6px 2px;
   color: var(--ink);
 }
 .status-pill input:focus { outline: none; }
-.status-pill .pill-divider { color: var(--muted); font-weight: 700; }
-.pill-caption { display: flex; gap: 44px; font-size: 9px; color: var(--muted); text-transform: uppercase; }
+.status-pill .pill-divider { align-self: center; color: var(--muted); font-weight: 700; }
+
+.pill-stepper {
+  display: flex;
+  flex-direction: column;
+  border-right: 2px solid var(--muted-border);
+}
+.pill-step-btn {
+  border: none;
+  background: transparent;
+  padding: 0 5px;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--muted);
+}
+.pill-step-btn:hover { background: var(--muted-fill); color: var(--ink); }
+.pill-step-btn::before {
+  content: "";
+  width: 0; height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+}
+.pill-step-btn.up { border-bottom: 1px solid var(--muted-border); }
+.pill-step-btn.up::before { border-bottom: 5px solid currentColor; }
+.pill-step-btn.down::before { border-top: 5px solid currentColor; }
+
+.pill-caption { display: flex; gap: 20px; font-size: 9px; color: var(--muted); text-transform: uppercase; }
 
 /* ---------- class cards (Basic view) ---------- */
 .class-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }

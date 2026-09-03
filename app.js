@@ -8,6 +8,7 @@ import OBR from "./obr-sdk.bundle.js";
 
 const THEME_KEY = "mothership-sheet-theme"; // "light" | "dark"
 const VIEW_KEY = "mothership-sheet-view"; // "advanced" | "basic"
+const FONT_SCALE_KEY = "mothership-sheet-font-scale";
 const LOCAL_ROOM_KEY = "mothership-sheet-room"; // standalone/local-preview fallback
 
 const ROOM_KEYS = {
@@ -273,6 +274,23 @@ function toggleTheme() {
   renderApp();
 }
 applyTheme();
+
+// ---------- font size scaling (per-viewer, everyone picks their own — same pattern as
+// the Mist sheet's font-scale toggle) ----------
+const FONT_SCALE_STEPS = [13, 15, 17, 19, 21]; // px; index 1 (15px) matches the base size
+let fontScaleIndex = (() => {
+  const saved = parseInt(localStorage.getItem(FONT_SCALE_KEY), 10);
+  return Number.isInteger(saved) && saved >= 0 && saved < FONT_SCALE_STEPS.length ? saved : 1;
+})();
+function applyFontScale() {
+  document.documentElement.style.fontSize = FONT_SCALE_STEPS[fontScaleIndex] + "px";
+}
+function adjustFontScale(delta) {
+  fontScaleIndex = Math.max(0, Math.min(FONT_SCALE_STEPS.length - 1, fontScaleIndex + delta));
+  localStorage.setItem(FONT_SCALE_KEY, String(fontScaleIndex));
+  applyFontScale();
+}
+applyFontScale();
 
 function isGM() {
   // Outside Owlbear there's no room/role concept, so GM-only tabs stay visible in
@@ -542,6 +560,12 @@ function renderTopbar() {
   ]);
   controls.appendChild(viewToggle);
   controls.appendChild(
+    el("button", { class: "icon-btn", title: "Decrease font size", text: "A−", onclick: () => adjustFontScale(-1) })
+  );
+  controls.appendChild(
+    el("button", { class: "icon-btn", title: "Increase font size", text: "A+", onclick: () => adjustFontScale(1) })
+  );
+  controls.appendChild(
     el("button", { class: "icon-btn", title: "Toggle dark mode", onclick: toggleTheme }, [themeIcon()])
   );
   bar.appendChild(controls);
@@ -634,13 +658,23 @@ function numberCircle(labelText, value, onInput) {
 }
 function statusPillField(labelText, current, second, onCurrent, onSecond, opts = {}) {
   const block = el("div", { class: "pill-block" });
+  block.appendChild(el("div", { class: "stat-label", text: labelText }));
+
   const pill = el("div", { class: "status-pill" });
+  const stepper = el("div", { class: "pill-stepper" });
+  const step = (delta) => {
+    const next = Math.max(0, (parseInt(current, 10) || 0) + delta);
+    onCurrent(String(next));
+    refreshTabContent();
+  };
+  stepper.appendChild(el("button", { type: "button", class: "pill-step-btn up", title: "Increase", onclick: () => step(1) }));
+  stepper.appendChild(el("button", { type: "button", class: "pill-step-btn down", title: "Decrease", onclick: () => step(-1) }));
+  pill.appendChild(stepper);
   pill.appendChild(el("input", { type: "text", inputmode: "numeric", value: current || "", oninput: (e) => onCurrent(e.target.value) }));
   pill.appendChild(el("span", { class: "pill-divider", text: "/" }));
   pill.appendChild(el("input", { type: "text", inputmode: "numeric", value: second || "", oninput: (e) => onSecond(e.target.value) }));
   block.appendChild(pill);
-  block.appendChild(el("div", { class: "stat-label", text: labelText }));
-  if (opts.caption) block.appendChild(el("div", { class: "stat-hint", text: opts.caption }));
+
   block.appendChild(el("div", { class: "pill-caption" }, [el("span", { text: "Current" }), el("span", { text: opts.secondLabel || "Max" })]));
   return block;
 }
@@ -695,71 +729,9 @@ function renderLineList(character, save, key, opts) {
   return outer;
 }
 
-function statsAndSavesSection(character, save, opts = {}) {
+function statusReportSection(character, save) {
   const wrap = el("div");
-  wrap.appendChild(el("div", { class: "section-title", text: "Stats" }));
-  const statsRow = el("div", { class: "circle-row" });
-  STAT_KEYS.forEach((k) => {
-    statsRow.appendChild(
-      numberCircle(STAT_LABELS[k], character.stats[k], (v) => {
-        character.stats[k] = v;
-        save();
-      })
-    );
-  });
-  wrap.appendChild(statsRow);
-  if (opts.statHint) wrap.appendChild(el("div", { class: "hint", text: opts.statHint }));
-
-  wrap.appendChild(el("div", { class: "section-title", text: "Saves" }));
-  const savesRow = el("div", { class: "circle-row" });
-  SAVE_KEYS.forEach((k) => {
-    savesRow.appendChild(
-      numberCircle(SAVE_LABELS[k], character.saves[k], (v) => {
-        character.saves[k] = v;
-        save();
-      })
-    );
-  });
-  wrap.appendChild(savesRow);
-  if (opts.saveHint) wrap.appendChild(el("div", { class: "hint", text: opts.saveHint }));
-  return wrap;
-}
-
-function statusReportSection(character, save, opts = {}) {
-  const wrap = el("div");
-  wrap.appendChild(el("div", { class: "section-title", text: "Status Report" }));
-  const row = el("div", { class: "pill-row" });
-  row.appendChild(
-    statusPillField(
-      "Health",
-      character.health.current,
-      character.health.max,
-      (v) => { character.health.current = v; save(); },
-      (v) => { character.health.max = v; save(); },
-      { caption: opts.healthHint }
-    )
-  );
-  row.appendChild(
-    statusPillField(
-      "Wounds",
-      character.wounds.current,
-      character.wounds.max,
-      (v) => { character.wounds.current = v; save(); },
-      (v) => { character.wounds.max = v; save(); },
-      { caption: opts.woundsHint }
-    )
-  );
-  row.appendChild(
-    statusPillField(
-      "Stress",
-      character.stress.current,
-      character.stress.min,
-      (v) => { character.stress.current = v; save(); },
-      (v) => { character.stress.min = v; save(); },
-      { caption: opts.stressHint, secondLabel: "Minimum" }
-    )
-  );
-  wrap.appendChild(row);
+  wrap.appendChild(statusReportRow(character, save, ["health", "wounds", "stress"]));
   wrap.appendChild(
     textAreaField("Conditions", character.conditions, (v) => { character.conditions = v; save(); }, { placeholder: "Injuries, afflictions, cybernetics…" })
   );
@@ -816,9 +788,20 @@ function personalDetailsPanelAdvanced(character, save) {
   const fields = el("div");
   fields.appendChild(textField("Character Name", character.name, (v) => { character.name = v; save(); }));
   fields.appendChild(textField("Pronouns", character.pronouns, (v) => { character.pronouns = v; save(); }));
-  fields.appendChild(classSelect(character, save));
   fields.appendChild(textField("High Score", character.highScore, (v) => { character.highScore = v; save(); }));
   body.appendChild(fields);
+  wrap.appendChild(body);
+  return wrap;
+}
+function classPanelAdvanced(character, save) {
+  const wrap = el("div", { class: "panel" });
+  wrap.appendChild(el("div", { class: "panel-header", text: "Class" }));
+  const body = el("div", { class: "panel-body" });
+  body.appendChild(classSelect(character, save));
+  const cls = character.class ? CLASSES[character.class] : null;
+  body.appendChild(
+    el("div", { class: "trauma-box", style: "margin-top:10px;", text: cls ? cls.trauma : "Select a class above to see its Trauma Response." })
+  );
   wrap.appendChild(body);
   return wrap;
 }
@@ -877,16 +860,29 @@ function skillTrainingBlock(character, save) {
   return wrap;
 }
 
+function statsPanelAdvanced(character, save) {
+  const wrap = el("div", { class: "panel" });
+  wrap.appendChild(el("div", { class: "panel-header", text: "Stats" }));
+  wrap.appendChild(el("div", { class: "panel-body" }, [statsAndSavesSectionStatsOnly(character, save)]));
+  return wrap;
+}
+function savesPanelAdvanced(character, save) {
+  const wrap = el("div", { class: "panel" });
+  wrap.appendChild(el("div", { class: "panel-header", text: "Saves" }));
+  wrap.appendChild(el("div", { class: "panel-body" }, [statsAndSavesSectionSavesOnly(character, save)]));
+  return wrap;
+}
+
 function renderCharacterSheetAdvanced(character, save) {
   const wrap = el("div", { class: "layout-two-col" });
   const left = el("div", { class: "stack" });
   left.appendChild(personalDetailsPanelAdvanced(character, save));
-
-  const statsPanel = el("div", { class: "panel" });
-  statsPanel.appendChild(el("div", { class: "panel-body" }, [statsAndSavesSection(character, save)]));
-  left.appendChild(statsPanel);
+  left.appendChild(classPanelAdvanced(character, save));
+  left.appendChild(statsPanelAdvanced(character, save));
+  left.appendChild(savesPanelAdvanced(character, save));
 
   const statusPanel = el("div", { class: "panel" });
+  statusPanel.appendChild(el("div", { class: "panel-header", text: "Status Report" }));
   statusPanel.appendChild(el("div", { class: "panel-body" }, [statusReportSection(character, save)]));
   left.appendChild(statusPanel);
 
@@ -1021,6 +1017,11 @@ function equipmentStepPanel(character, save) {
 
 function renderCharacterSheetBasic(character, save) {
   const wrap = el("div");
+  const cols = el("div", { class: "layout-two-col" });
+
+  // Left column — matches the source sheet's left half: identity, the numbered
+  // creation steps 1-6, and step 8's equipment loadout.
+  const left = el("div", { class: "stack" });
 
   const header = el("div", { class: "panel" });
   header.appendChild(el("div", { class: "panel-header", text: "Personal Details" }));
@@ -1034,30 +1035,24 @@ function renderCharacterSheetBasic(character, save) {
       textAreaField("Personal Notes", character.personalNotes, (v) => { character.personalNotes = v; save(); }),
     ])
   );
-  wrap.appendChild(header);
+  left.appendChild(header);
 
-  wrap.appendChild(
-    stepPanel(1, "Roll 2d10+25 for each Stat", [statsAndSavesSectionStatsOnly(character, save)])
-  );
-  wrap.appendChild(
-    stepPanel(2, "Roll 2d10+10 for each Save", [statsAndSavesSectionSavesOnly(character, save)])
-  );
-  wrap.appendChild(classStepPanel(character, save));
-  wrap.appendChild(
+  left.appendChild(stepPanel(1, "Roll 2d10+25 for each Stat", [statsAndSavesSectionStatsOnly(character, save)]));
+  left.appendChild(stepPanel(2, "Roll 2d10+10 for each Save", [statsAndSavesSectionSavesOnly(character, save)]));
+  left.appendChild(classStepPanel(character, save));
+  left.appendChild(
     stepPanel(4, "Roll 1d10+10 for your Health — starts at Maximum with 0 Wounds", [
-      statusReportRow(character, save, "health"),
+      statusReportRow(character, save, ["health", "wounds"]),
     ])
   );
-  wrap.appendChild(stepPanel(5, "Gain Stress — starts at 2", [statusReportRow(character, save, "stress")]));
-  wrap.appendChild(
-    el("div", { class: "panel" }, [
-      el("div", { class: "panel-header", text: "Wounds" }),
-      el("div", { class: "panel-body" }, [statusReportRow(character, save, "wounds")]),
-    ])
-  );
-  wrap.appendChild(traumaStepPanel(character));
-  wrap.appendChild(skillTreeStepPanel(character, save));
-  wrap.appendChild(equipmentStepPanel(character, save));
+  left.appendChild(stepPanel(5, "Gain Stress — starts at 2", [statusReportRow(character, save, ["stress"])]));
+  left.appendChild(traumaStepPanel(character));
+  left.appendChild(equipmentStepPanel(character, save));
+
+  // Right column — the full skill tree (step 7), plus Skill Training and Conditions
+  // which sit below it on the source sheet's right half.
+  const right = el("div", { class: "stack" });
+  right.appendChild(skillTreeStepPanel(character, save));
 
   const conditionsPanel = el("div", { class: "panel" });
   conditionsPanel.appendChild(el("div", { class: "panel-header", text: "Conditions" }));
@@ -1066,8 +1061,17 @@ function renderCharacterSheetBasic(character, save) {
       textAreaField(null, character.conditions, (v) => { character.conditions = v; save(); }),
     ])
   );
-  wrap.appendChild(conditionsPanel);
-  wrap.appendChild(skillTrainingSection(character, save));
+  right.appendChild(conditionsPanel);
+  right.appendChild(skillTrainingSection(character, save));
+
+  cols.appendChild(left);
+  cols.appendChild(right);
+  wrap.appendChild(cols);
+
+  // Itemized Equipment/Weapons lists aren't part of the source Basic sheet (only the
+  // freeform step-8 loadout box is) — kept here, full width, so a player who only ever
+  // uses the Basic view can still fill in the same equipment/weapons arrays the
+  // Advanced view shows, without it disrupting the two-column layout above.
   wrap.appendChild(equipmentPanel(character, save));
   wrap.appendChild(weaponsPanel(character, save));
 
@@ -1083,24 +1087,26 @@ function statsAndSavesSectionSavesOnly(character, save) {
   SAVE_KEYS.forEach((k) => row.appendChild(numberCircle(SAVE_LABELS[k], character.saves[k], (v) => { character.saves[k] = v; save(); })));
   return row;
 }
-function statusReportRow(character, save, key) {
+function statusReportRow(character, save, keys) {
   const row = el("div", { class: "pill-row" });
   const labels = { health: "Health", wounds: "Wounds", stress: "Stress" };
-  const secondLabel = key === "stress" ? "Minimum" : "Max";
-  row.appendChild(
-    statusPillField(
-      labels[key],
-      character[key].current,
-      key === "stress" ? character[key].min : character[key].max,
-      (v) => { character[key].current = v; save(); },
-      (v) => {
-        if (key === "stress") character[key].min = v;
-        else character[key].max = v;
-        save();
-      },
-      { secondLabel }
-    )
-  );
+  keys.forEach((key) => {
+    const secondLabel = key === "stress" ? "Minimum" : "Max";
+    row.appendChild(
+      statusPillField(
+        labels[key],
+        character[key].current,
+        key === "stress" ? character[key].min : character[key].max,
+        (v) => { character[key].current = v; save(); },
+        (v) => {
+          if (key === "stress") character[key].min = v;
+          else character[key].max = v;
+          save();
+        },
+        { secondLabel }
+      )
+    );
+  });
   return row;
 }
 
