@@ -644,9 +644,9 @@ function textAreaField(label, value, onInput, opts = {}) {
   wrap.appendChild(area);
   return wrap;
 }
-function numberCircle(labelText, value, onInput) {
-  const block = el("div", { class: "stat-block" });
-  const circle = el("div", { class: "stat-circle" });
+function numberCircle(labelText, value, onInput, opts = {}) {
+  const block = el("div", { class: "stat-block" + (opts.compact ? " compact" : "") });
+  const circle = el("div", { class: "stat-circle" + (opts.compact ? " compact" : "") });
   circle.appendChild(
     el("input", {
       type: "text",
@@ -1084,8 +1084,8 @@ function renderCharacterSheetBasic(character, save) {
   const identityAndStats = el("div", { class: "two-col-equal" });
   identityAndStats.appendChild(header);
   const statsStack = el("div", { class: "stack" });
-  statsStack.appendChild(stepPanel(1, "Roll 2d10+25 for each Stat", [statsAndSavesSectionStatsOnly(character, save)]));
-  statsStack.appendChild(stepPanel(2, "Roll 2d10+10 for each Save", [statsAndSavesSectionSavesOnly(character, save)]));
+  statsStack.appendChild(stepPanel(1, "Roll 2d10+25 for each Stat", [statsAndSavesSectionStatsOnly(character, save, { compact: true })]));
+  statsStack.appendChild(stepPanel(2, "Roll 2d10+10 for each Save", [statsAndSavesSectionSavesOnly(character, save, { compact: true })]));
   identityAndStats.appendChild(statsStack);
   left.appendChild(identityAndStats);
 
@@ -1126,14 +1126,14 @@ function renderCharacterSheetBasic(character, save) {
 
   return wrap;
 }
-function statsAndSavesSectionStatsOnly(character, save) {
-  const row = el("div", { class: "circle-row" });
-  STAT_KEYS.forEach((k) => row.appendChild(numberCircle(STAT_LABELS[k], character.stats[k], (v) => { character.stats[k] = v; save(); })));
+function statsAndSavesSectionStatsOnly(character, save, opts = {}) {
+  const row = el("div", { class: "circle-row" + (opts.compact ? " compact" : "") });
+  STAT_KEYS.forEach((k) => row.appendChild(numberCircle(STAT_LABELS[k], character.stats[k], (v) => { character.stats[k] = v; save(); }, opts)));
   return row;
 }
-function statsAndSavesSectionSavesOnly(character, save) {
-  const row = el("div", { class: "circle-row" });
-  SAVE_KEYS.forEach((k) => row.appendChild(numberCircle(SAVE_LABELS[k], character.saves[k], (v) => { character.saves[k] = v; save(); })));
+function statsAndSavesSectionSavesOnly(character, save, opts = {}) {
+  const row = el("div", { class: "circle-row" + (opts.compact ? " compact" : "") });
+  SAVE_KEYS.forEach((k) => row.appendChild(numberCircle(SAVE_LABELS[k], character.saves[k], (v) => { character.saves[k] = v; save(); }, opts)));
   return row;
 }
 function statusReportRow(character, save, keys) {
