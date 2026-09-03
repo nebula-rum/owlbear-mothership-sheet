@@ -207,8 +207,10 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
   padding: 4px 2px;
 }
 .field-input:focus, .field-textarea:focus { outline: none; border-color: var(--focus); }
-.field-textarea { resize: vertical; min-height: 46px; border: 2px solid var(--muted-border); border-radius: 8px; padding: 6px 8px; }
+.field-textarea { resize: vertical; min-height: 46px; border: 2px solid var(--muted-border); border-radius: 8px; padding: 6px 8px; width: 100%; }
 .field-row { margin-bottom: 10px; }
+.field-row-fill { display: flex; flex-direction: column; flex: 1; margin-bottom: 0; }
+.field-textarea-tall { min-height: 160px; flex: 1; }
 
 /* ---------- stat / save circles ---------- */
 .circle-row { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; padding: 6px 0; }
@@ -303,7 +305,7 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
   background: var(--panel);
 }
 .class-card.selected { background: var(--ink); color: var(--bg); }
-.class-card .class-name {
+.class-name {
   font-family: "Poppins", system-ui, sans-serif;
   font-weight: 800;
   text-transform: uppercase;
@@ -311,9 +313,26 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
   margin-bottom: 6px;
 }
 .class-card ul { margin: 0; padding-left: 16px; font-size: 12px; }
-.class-card .class-bonus-skill { font-size: 11px; margin-top: 6px; opacity: 0.85; }
+.class-bonus-skill { font-size: 11px; margin-top: 6px; opacity: 0.85; }
 .stat-choice-row { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
 .stat-choice-row select { border: 2px solid var(--muted-border); border-radius: 6px; padding: 3px 6px; font-size: 11px; }
+
+/* ---------- class skills row (Basic view, step 7 — one column per class) ---------- */
+.class-skills-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.class-skills-cell {
+  border: 2px solid var(--muted-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.class-skills-text { font-size: 11px; }
+@media (max-width: 640px) {
+  .class-skills-row { grid-template-columns: 1fr 1fr; }
+}
 
 /* ---------- trauma response box ---------- */
 .trauma-box {
@@ -402,17 +421,6 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
   font-weight: 700;
   cursor: pointer;
 }
-.loadout-type-select {
-  border: 2px solid var(--muted-border);
-  border-radius: 6px;
-  padding: 4px 4px;
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--muted);
-  flex: none;
-  width: 96px;
-}
-
 /* ---------- generic buttons ---------- */
 .btn {
   border: 2px solid var(--border);
@@ -451,6 +459,13 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
 .two-col-equal { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
 @media (max-width: 820px) {
   .two-col-equal { grid-template-columns: 1fr; }
+}
+/* Health/Wounds needs more room than Stress (two pills vs. one), so this row isn't a
+   plain 50/50 split like .two-col-equal. */
+.health-stress-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; align-items: start; margin-bottom: 16px; }
+.health-stress-row .panel { margin-bottom: 0; }
+@media (max-width: 560px) {
+  .health-stress-row { grid-template-columns: 1fr; }
 }
 .stack { display: flex; flex-direction: column; }
 

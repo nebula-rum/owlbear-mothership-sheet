@@ -408,7 +408,6 @@ function defaultCharacter(id) {
     conditions: "",
     equipment: [],
     weapons: [],
-    loadout: [],
     armorPoints: "",
     credits: "",
   };
@@ -418,26 +417,6 @@ function normalizeLineList(raw) {
   return raw
     .filter((x) => x && typeof x === "object")
     .map((x) => ({ id: x.id || uid(), text: typeof x.text === "string" ? x.text : "" }));
-}
-// The Basic sheet's step 8 loadout — unlike Equipment/Weapons (plain lists, Advanced-view
-// only), each line is tagged with what kind of thing it is, matching the source sheet's
-// step title ("...Loadout, Trinket & Patch"). Kept as its own array rather than folding
-// into `equipment`/`weapons` so Basic and Advanced each own a clearly separate list.
-const LOADOUT_TYPES = [
-  { value: "equipment", label: "Equipment" },
-  { value: "weapon", label: "Weapon" },
-  { value: "patch", label: "Patch" },
-  { value: "trinket", label: "Trinket" },
-];
-function normalizeLoadoutList(raw) {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .filter((x) => x && typeof x === "object")
-    .map((x) => ({
-      id: x.id || uid(),
-      type: LOADOUT_TYPES.some((t) => t.value === x.type) ? x.type : "equipment",
-      text: typeof x.text === "string" ? x.text : "",
-    }));
 }
 function normalizeCharacter(raw, id) {
   const c = Object.assign(defaultCharacter(id), raw || {});
@@ -455,7 +434,6 @@ function normalizeCharacter(raw, id) {
     : [];
   c.equipment = normalizeLineList(raw && raw.equipment);
   c.weapons = normalizeLineList(raw && raw.weapons);
-  c.loadout = normalizeLoadoutList(raw && raw.loadout);
   c.class = CLASSES[raw && raw.class] ? raw.class : null;
   return c;
 }
@@ -655,10 +633,10 @@ function textField(label, value, onInput, opts = {}) {
   return wrap;
 }
 function textAreaField(label, value, onInput, opts = {}) {
-  const wrap = el("div", { class: "field-row" });
+  const wrap = el("div", { class: "field-row" + (opts.tall ? " field-row-fill" : "") });
   if (label) wrap.appendChild(el("label", { class: "field-label", text: label }));
   const area = el("textarea", {
-    class: "field-textarea",
+    class: "field-textarea" + (opts.tall ? " field-textarea-tall" : ""),
     placeholder: opts.placeholder || "",
     oninput: (e) => onInput(e.target.value),
   });
@@ -812,10 +790,22 @@ function personalDetailsPanelAdvanced(character, save) {
   body.appendChild(el("div", { class: "portrait-box", text: "No portrait" }));
   const fields = el("div");
   fields.appendChild(textField("Character Name", character.name, (v) => { character.name = v; save(); }));
-  fields.appendChild(textField("Pronouns", character.pronouns, (v) => { character.pronouns = v; save(); }));
+  const row2 = el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:12px;" });
+  row2.appendChild(textField("Pronouns", character.pronouns, (v) => { character.pronouns = v; save(); }));
+  row2.appendChild(textField("Player Name", character.playerName, (v) => { character.playerName = v; save(); }));
+  fields.appendChild(row2);
+  const row3 = el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:12px;" });
+  row3.appendChild(textField("Trinket", character.trinket, (v) => { character.trinket = v; save(); }));
+  row3.appendChild(textField("Patch", character.patch, (v) => { character.patch = v; save(); }));
+  fields.appendChild(row3);
   fields.appendChild(textField("High Score", character.highScore, (v) => { character.highScore = v; save(); }));
   body.appendChild(fields);
   wrap.appendChild(body);
+  wrap.appendChild(
+    el("div", { class: "dark-block panel-body tight", style: "grid-template-columns:1fr;" }, [
+      textAreaField("Personal Notes", character.personalNotes, (v) => { character.personalNotes = v; save(); }, { tall: true }),
+    ])
+  );
   return wrap;
 }
 function classPanelAdvanced(character, save) {
@@ -949,7 +939,6 @@ function classCard(character, save, key) {
   ul.appendChild(el("li", { text: cls.saveBonusText }));
   if (cls.woundsBonusText) ul.appendChild(el("li", { text: cls.woundsBonusText }));
   card.appendChild(ul);
-  card.appendChild(el("div", { class: "class-bonus-skill", text: cls.bonusSkillText }));
   if (selected && (cls.statPenaltyChoice || cls.statBonusChoice)) {
     const choiceRow = el("div", { class: "stat-choice-row" });
     choiceRow.addEventListener("click", (e) => e.stopPropagation());
@@ -1016,6 +1005,22 @@ function skillTreeColumn(character, save, tier, title) {
   }
   return col;
 }
+// One column per class, directly under the step 7 title — each class's starting
+// skills and bonus-skill allowance, matching the source sheet's own header row (this
+// is also where "Bonus: ..." moved from the step 3 class cards, which now only cover
+// stat/save bonuses).
+function classSkillsRow() {
+  const grid = el("div", { class: "class-skills-row" });
+  CLASS_ORDER.forEach((key) => {
+    const cls = CLASSES[key];
+    const cell = el("div", { class: "class-skills-cell" });
+    cell.appendChild(el("div", { class: "class-name", text: cls.label }));
+    cell.appendChild(el("div", { class: "class-skills-text", text: cls.startingSkillsText }));
+    cell.appendChild(el("div", { class: "class-bonus-skill", text: cls.bonusSkillText }));
+    grid.appendChild(cell);
+  });
+  return grid;
+}
 function skillTreeStepPanel(character, save) {
   const treeWrap = el("div", { class: "skill-tree-wrap" });
   const cols = el("div", { class: "skill-tree-cols" });
@@ -1025,69 +1030,26 @@ function skillTreeStepPanel(character, save) {
   treeWrap.appendChild(cols);
   return stepPanel(7, "Note Class Skills and Choose Bonus Skills", [
     el("div", { class: "hint", text: "To take a Master or Expert skill you must first have at least one of its listed prerequisites. Tap a dot to take that skill at that tier; tap it again to clear it." }),
+    classSkillsRow(),
     treeWrap,
   ]);
 }
-function renderLoadoutList(character, save) {
-  const wrap = el("div", { class: "line-list" });
-  character.loadout.forEach((item) => {
-    const row = el("div", { class: "line-list-row loadout-row" });
-    row.appendChild(
-      el(
-        "select",
-        {
-          class: "loadout-type-select",
-          onchange: (e) => { item.type = e.target.value; save(); },
-        },
-        LOADOUT_TYPES.map((t) => el("option", { value: t.value, text: t.label, selected: item.type === t.value ? "selected" : undefined }))
-      )
-    );
-    row.appendChild(
-      el("input", {
-        type: "text",
-        class: "field-input",
-        value: item.text,
-        placeholder: "Describe the item…",
-        oninput: (e) => { item.text = e.target.value; save(); },
-      })
-    );
-    row.appendChild(
-      el(
-        "button",
-        {
-          class: "trash-btn",
-          title: "Remove",
-          onclick: () => {
-            showConfirmDialog("Remove this item?", () => {
-              character.loadout = character.loadout.filter((x) => x.id !== item.id);
-              save();
-              refreshTabContent();
-            });
-          },
-        },
-        [trashIcon()]
-      )
-    );
-    wrap.appendChild(row);
-  });
-  const addBtn = el("button", {
-    class: "add-row-btn",
-    text: "+ Add Item",
-    onclick: () => {
-      character.loadout.push({ id: uid(), type: "equipment", text: "" });
-      save();
-      refreshTabContent();
-    },
-  });
-  const outer = el("div");
-  outer.appendChild(wrap);
-  outer.appendChild(addBtn);
-  return outer;
-}
+// Step 8 writes straight into the same fields the Advanced view's Equipment/Weapons
+// panels and Personal Details show (`equipment`, `weapons`, `trinket`, `patch`,
+// `armorPoints`, `credits`) — reusing the exact same list component Advanced uses for
+// Equipment/Weapons, so nothing entered here needs a separate "loadout" record to stay
+// in sync; the two views are just two renderings of the same data.
 function equipmentStepPanel(character, save) {
   return stepPanel(8, "Roll for Your Equipment Loadout, Trinket & Patch", [
-    renderLoadoutList(character, save),
-    el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;" }, [
+    el("div", { class: "field-label", text: "Equipment" }),
+    renderLineList(character, save, "equipment", { singular: "item", placeholder: "Equipment item…" }),
+    el("div", { class: "field-label", style: "margin-top:14px;", text: "Weapons" }),
+    renderLineList(character, save, "weapons", { singular: "weapon", placeholder: "Weapon…" }),
+    el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;" }, [
+      textField("Trinket", character.trinket, (v) => { character.trinket = v; save(); }),
+      textField("Patch", character.patch, (v) => { character.patch = v; save(); }),
+    ]),
+    el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;" }, [
       textField("Armor Points", character.armorPoints, (v) => { character.armorPoints = v; save(); }),
       textField("Credits (2d10×10)", character.credits, (v) => { character.credits = v; save(); }),
     ]),
@@ -1110,14 +1072,10 @@ function renderCharacterSheetBasic(character, save) {
   identityRow2.appendChild(textField("Pronouns", character.pronouns, (v) => { character.pronouns = v; save(); }));
   identityRow2.appendChild(textField("Player Name", character.playerName, (v) => { character.playerName = v; save(); }));
   headerBody.appendChild(identityRow2);
-  const identityRow3 = el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:12px;" });
-  identityRow3.appendChild(textField("Trinket", character.trinket, (v) => { character.trinket = v; save(); }));
-  identityRow3.appendChild(textField("Patch", character.patch, (v) => { character.patch = v; save(); }));
-  headerBody.appendChild(identityRow3);
   header.appendChild(headerBody);
   header.appendChild(
-    el("div", { class: "dark-block panel-body tight" }, [
-      textAreaField("Personal Notes", character.personalNotes, (v) => { character.personalNotes = v; save(); }),
+    el("div", { class: "dark-block panel-body tight", style: "grid-template-columns:1fr;" }, [
+      textAreaField("Personal Notes", character.personalNotes, (v) => { character.personalNotes = v; save(); }, { tall: true }),
     ])
   );
 
@@ -1132,12 +1090,18 @@ function renderCharacterSheetBasic(character, save) {
   left.appendChild(identityAndStats);
 
   left.appendChild(classStepPanel(character, save));
-  left.appendChild(
+
+  // Steps 4 and 5 sit side by side (still two separate boxes), matching the source
+  // sheet's row — Health/Wounds gets more room since it holds two pills to Stress's one.
+  const healthStressRow = el("div", { class: "health-stress-row" });
+  healthStressRow.appendChild(
     stepPanel(4, "Roll 1d10+10 for your Health — starts at Maximum with 0 Wounds", [
       statusReportRow(character, save, ["health", "wounds"]),
     ])
   );
-  left.appendChild(stepPanel(5, "Gain Stress — starts at 2", [statusReportRow(character, save, ["stress"])]));
+  healthStressRow.appendChild(stepPanel(5, "Gain Stress — starts at 2", [statusReportRow(character, save, ["stress"])]));
+  left.appendChild(healthStressRow);
+
   left.appendChild(traumaStepPanel(character));
   left.appendChild(equipmentStepPanel(character, save));
 
