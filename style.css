@@ -402,6 +402,16 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
   font-weight: 700;
   cursor: pointer;
 }
+.loadout-type-select {
+  border: 2px solid var(--muted-border);
+  border-radius: 6px;
+  padding: 4px 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  flex: none;
+  width: 96px;
+}
 
 /* ---------- generic buttons ---------- */
 .btn {
@@ -434,6 +444,13 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
 .layout-two-col { display: grid; grid-template-columns: minmax(280px, 380px) 1fr; gap: 16px; align-items: start; }
 @media (max-width: 820px) {
   .layout-two-col { grid-template-columns: 1fr; }
+}
+/* Equal 50/50 split — the Basic view's outer left/right columns, and its inner
+   Personal-Details/Stats+Saves pairing, both match the source sheet's identical-width
+   halves rather than the Advanced view's narrower-sidebar proportions above. */
+.two-col-equal { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+@media (max-width: 820px) {
+  .two-col-equal { grid-template-columns: 1fr; }
 }
 .stack { display: flex; flex-direction: column; }
 

@@ -251,7 +251,9 @@ let activeTab = "sheet"; // "sheet" | "roster"
 let activeCharacterId = null;
 let expandedRosterId = null;
 
-let sheetView = localStorage.getItem(VIEW_KEY) === "basic" ? "basic" : "advanced";
+// Basic is the default starting point (character creation); a viewer who explicitly
+// picks Advanced has that remembered, same as every other per-viewer preference here.
+let sheetView = localStorage.getItem(VIEW_KEY) === "advanced" ? "advanced" : "basic";
 function setSheetView(v) {
   sheetView = v;
   localStorage.setItem(VIEW_KEY, v);
@@ -392,6 +394,8 @@ function defaultCharacter(id) {
     playerName: "",
     personalNotes: "",
     highScore: "",
+    trinket: "",
+    patch: "",
     class: null,
     classStatChoice: null,
     stats: { strength: "", speed: "", intellect: "", combat: "" },
@@ -404,7 +408,7 @@ function defaultCharacter(id) {
     conditions: "",
     equipment: [],
     weapons: [],
-    loadoutNotes: "",
+    loadout: [],
     armorPoints: "",
     credits: "",
   };
@@ -414,6 +418,26 @@ function normalizeLineList(raw) {
   return raw
     .filter((x) => x && typeof x === "object")
     .map((x) => ({ id: x.id || uid(), text: typeof x.text === "string" ? x.text : "" }));
+}
+// The Basic sheet's step 8 loadout — unlike Equipment/Weapons (plain lists, Advanced-view
+// only), each line is tagged with what kind of thing it is, matching the source sheet's
+// step title ("...Loadout, Trinket & Patch"). Kept as its own array rather than folding
+// into `equipment`/`weapons` so Basic and Advanced each own a clearly separate list.
+const LOADOUT_TYPES = [
+  { value: "equipment", label: "Equipment" },
+  { value: "weapon", label: "Weapon" },
+  { value: "patch", label: "Patch" },
+  { value: "trinket", label: "Trinket" },
+];
+function normalizeLoadoutList(raw) {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter((x) => x && typeof x === "object")
+    .map((x) => ({
+      id: x.id || uid(),
+      type: LOADOUT_TYPES.some((t) => t.value === x.type) ? x.type : "equipment",
+      text: typeof x.text === "string" ? x.text : "",
+    }));
 }
 function normalizeCharacter(raw, id) {
   const c = Object.assign(defaultCharacter(id), raw || {});
@@ -431,6 +455,7 @@ function normalizeCharacter(raw, id) {
     : [];
   c.equipment = normalizeLineList(raw && raw.equipment);
   c.weapons = normalizeLineList(raw && raw.weapons);
+  c.loadout = normalizeLoadoutList(raw && raw.loadout);
   c.class = CLASSES[raw && raw.class] ? raw.class : null;
   return c;
 }
@@ -1003,12 +1028,66 @@ function skillTreeStepPanel(character, save) {
     treeWrap,
   ]);
 }
+function renderLoadoutList(character, save) {
+  const wrap = el("div", { class: "line-list" });
+  character.loadout.forEach((item) => {
+    const row = el("div", { class: "line-list-row loadout-row" });
+    row.appendChild(
+      el(
+        "select",
+        {
+          class: "loadout-type-select",
+          onchange: (e) => { item.type = e.target.value; save(); },
+        },
+        LOADOUT_TYPES.map((t) => el("option", { value: t.value, text: t.label, selected: item.type === t.value ? "selected" : undefined }))
+      )
+    );
+    row.appendChild(
+      el("input", {
+        type: "text",
+        class: "field-input",
+        value: item.text,
+        placeholder: "Describe the item…",
+        oninput: (e) => { item.text = e.target.value; save(); },
+      })
+    );
+    row.appendChild(
+      el(
+        "button",
+        {
+          class: "trash-btn",
+          title: "Remove",
+          onclick: () => {
+            showConfirmDialog("Remove this item?", () => {
+              character.loadout = character.loadout.filter((x) => x.id !== item.id);
+              save();
+              refreshTabContent();
+            });
+          },
+        },
+        [trashIcon()]
+      )
+    );
+    wrap.appendChild(row);
+  });
+  const addBtn = el("button", {
+    class: "add-row-btn",
+    text: "+ Add Item",
+    onclick: () => {
+      character.loadout.push({ id: uid(), type: "equipment", text: "" });
+      save();
+      refreshTabContent();
+    },
+  });
+  const outer = el("div");
+  outer.appendChild(wrap);
+  outer.appendChild(addBtn);
+  return outer;
+}
 function equipmentStepPanel(character, save) {
   return stepPanel(8, "Roll for Your Equipment Loadout, Trinket & Patch", [
-    textAreaField("Loadout / Trinket / Patch", character.loadoutNotes, (v) => { character.loadoutNotes = v; save(); }, {
-      placeholder: "Roll on the class equipment tables and note the result here…",
-    }),
-    el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;" }, [
+    renderLoadoutList(character, save),
+    el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;" }, [
       textField("Armor Points", character.armorPoints, (v) => { character.armorPoints = v; save(); }),
       textField("Credits (2d10×10)", character.credits, (v) => { character.credits = v; save(); }),
     ]),
@@ -1017,28 +1096,41 @@ function equipmentStepPanel(character, save) {
 
 function renderCharacterSheetBasic(character, save) {
   const wrap = el("div");
-  const cols = el("div", { class: "layout-two-col" });
+  const cols = el("div", { class: "two-col-equal" });
 
-  // Left column — matches the source sheet's left half: identity, the numbered
-  // creation steps 1-6, and step 8's equipment loadout.
+  // Left column — matches the source sheet's left half: identity + Stats/Saves side by
+  // side at the top, then the numbered creation steps 3-6 and step 8's loadout.
   const left = el("div", { class: "stack" });
 
   const header = el("div", { class: "panel" });
   header.appendChild(el("div", { class: "panel-header", text: "Personal Details" }));
-  const headerBody = el("div", { class: "dark-block panel-body", style: "display:grid;grid-template-columns:1fr 1fr auto;gap:12px;" });
+  const headerBody = el("div", { class: "dark-block panel-body", style: "display:flex;flex-direction:column;gap:10px;" });
   headerBody.appendChild(textField("Character Name", character.name, (v) => { character.name = v; save(); }));
-  headerBody.appendChild(textField("Pronouns", character.pronouns, (v) => { character.pronouns = v; save(); }));
-  headerBody.appendChild(textField("Player Name", character.playerName, (v) => { character.playerName = v; save(); }));
+  const identityRow2 = el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:12px;" });
+  identityRow2.appendChild(textField("Pronouns", character.pronouns, (v) => { character.pronouns = v; save(); }));
+  identityRow2.appendChild(textField("Player Name", character.playerName, (v) => { character.playerName = v; save(); }));
+  headerBody.appendChild(identityRow2);
+  const identityRow3 = el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:12px;" });
+  identityRow3.appendChild(textField("Trinket", character.trinket, (v) => { character.trinket = v; save(); }));
+  identityRow3.appendChild(textField("Patch", character.patch, (v) => { character.patch = v; save(); }));
+  headerBody.appendChild(identityRow3);
   header.appendChild(headerBody);
   header.appendChild(
     el("div", { class: "dark-block panel-body tight" }, [
       textAreaField("Personal Notes", character.personalNotes, (v) => { character.personalNotes = v; save(); }),
     ])
   );
-  left.appendChild(header);
 
-  left.appendChild(stepPanel(1, "Roll 2d10+25 for each Stat", [statsAndSavesSectionStatsOnly(character, save)]));
-  left.appendChild(stepPanel(2, "Roll 2d10+10 for each Save", [statsAndSavesSectionSavesOnly(character, save)]));
+  // Personal Details sits to the left of Stats/Saves (stacked), matching the source
+  // sheet's top-left arrangement, each taking half of this column's width.
+  const identityAndStats = el("div", { class: "two-col-equal" });
+  identityAndStats.appendChild(header);
+  const statsStack = el("div", { class: "stack" });
+  statsStack.appendChild(stepPanel(1, "Roll 2d10+25 for each Stat", [statsAndSavesSectionStatsOnly(character, save)]));
+  statsStack.appendChild(stepPanel(2, "Roll 2d10+10 for each Save", [statsAndSavesSectionSavesOnly(character, save)]));
+  identityAndStats.appendChild(statsStack);
+  left.appendChild(identityAndStats);
+
   left.appendChild(classStepPanel(character, save));
   left.appendChild(
     stepPanel(4, "Roll 1d10+10 for your Health — starts at Maximum with 0 Wounds", [
@@ -1068,13 +1160,6 @@ function renderCharacterSheetBasic(character, save) {
   cols.appendChild(right);
   wrap.appendChild(cols);
 
-  // Itemized Equipment/Weapons lists aren't part of the source Basic sheet (only the
-  // freeform step-8 loadout box is) — kept here, full width, so a player who only ever
-  // uses the Basic view can still fill in the same equipment/weapons arrays the
-  // Advanced view shows, without it disrupting the two-column layout above.
-  wrap.appendChild(equipmentPanel(character, save));
-  wrap.appendChild(weaponsPanel(character, save));
-
   return wrap;
 }
 function statsAndSavesSectionStatsOnly(character, save) {
@@ -1091,7 +1176,7 @@ function statusReportRow(character, save, keys) {
   const row = el("div", { class: "pill-row" });
   const labels = { health: "Health", wounds: "Wounds", stress: "Stress" };
   keys.forEach((key) => {
-    const secondLabel = key === "stress" ? "Minimum" : "Max";
+    const secondLabel = key === "stress" ? "Min" : "Max";
     row.appendChild(
       statusPillField(
         labels[key],
