@@ -1,0 +1,15 @@
+{
+  "name": "Mothership — Character Profile",
+  "version": "1.0.0",
+  "manifest_version": 1,
+  "description": "A Character Profile sheet for the Mothership RPG, with a GM roster and Basic/Advanced views.",
+  "icon": "/owlbear-mothership-sheet/icon.svg",
+  "author": "nebularum",
+  "action": {
+    "title": "Character Profile",
+    "icon": "/owlbear-mothership-sheet/icon.svg",
+    "popover": "/owlbear-mothership-sheet/index.html",
+    "height": 860,
+    "width": 1180
+  }
+}
