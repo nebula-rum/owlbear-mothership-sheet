@@ -600,8 +600,40 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
 .roster-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; flex-wrap: wrap; }
 .roster-row .field-input { flex: 1; min-width: 140px; }
 .access-select { border: 2px solid var(--muted-border); border-radius: 8px; padding: 5px 8px; font-size: 12px; }
+.lock-toggle-btn {
+  border: 2px solid var(--muted-border);
+  background: transparent;
+  color: var(--muted);
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex: none;
+  padding: 0;
+}
+.lock-toggle-btn svg { width: 15px; height: 15px; }
+.lock-toggle-btn.active { border-color: var(--danger); color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
 .roster-editor { border-top: 2px solid var(--muted-border); padding: 12px; background: var(--muted-fill); }
 .party-empty { color: var(--muted); text-align: center; padding: 30px 10px; font-size: 13px; }
+
+/* ---------- character-sheet lock (GM-set, players read-only) ---------- */
+.locked-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: color-mix(in srgb, var(--danger) 10%, var(--panel));
+  border: 2px solid var(--danger);
+  color: var(--danger);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.locked-banner svg { width: 16px; height: 16px; flex: none; }
+input:disabled, textarea:disabled, select:disabled { opacity: 0.6; cursor: not-allowed; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+.class-card.locked-noninteractive { cursor: default; }
 
 /* ---------- confirm dialog ---------- */
 .confirm-overlay {

@@ -195,6 +195,16 @@ function trashIcon() {
   return svg;
 }
 
+function lockIcon(locked) {
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.innerHTML = locked
+    ? '<rect x="5" y="11" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>'
+    : '<rect x="5" y="11" width="14" height="9" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M8 11V7a4 4 0 0 1 7.5-2" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  return svg;
+}
+
 /* ---------- in-app confirm dialog (never the browser's native confirm()) ---------- */
 let activeConfirmClose = null;
 function closeConfirmDialog() {
@@ -242,7 +252,7 @@ let activeNotesClose = null;
 function closeNotesEditor() {
   if (activeNotesClose) activeNotesClose();
 }
-function openNotesEditor(character, save) {
+function openNotesEditor(character, save, locked) {
   closeConfirmDialog();
   closeNotesEditor();
   const overlay = el("div", { class: "confirm-overlay" });
@@ -250,6 +260,7 @@ function openNotesEditor(character, save) {
   box.appendChild(el("div", { class: "notes-box-title", text: "Personal Notes" }));
   const area = el("textarea", {
     class: "field-textarea notes-box-textarea",
+    disabled: locked || undefined,
     oninput: (e) => { character.personalNotes = e.target.value; save(); },
   });
   area.value = character.personalNotes || "";
@@ -278,10 +289,11 @@ function openNotesEditor(character, save) {
   area.focus();
 }
 function personalNotesLink(character, save) {
+  const locked = sheetLocked;
   return el("button", {
     type: "button",
     class: "notes-link",
-    onclick: () => openNotesEditor(character, save),
+    onclick: () => openNotesEditor(character, save, locked),
   }, [
     "Personal Notes",
     character.personalNotes ? el("span", { class: "notes-link-badge", text: "✓" }) : el("span", { class: "notes-link-arrow", text: "→" }),
@@ -300,6 +312,13 @@ let partyPlayers = [];
 let activeTab = "sheet"; // "sheet" | "roster"
 let activeCharacterId = null;
 let expandedRosterId = null;
+
+// Set for the duration of a single renderCharacterSheet() call when the viewer is a
+// player looking at a character the GM has locked — every field-level component below
+// checks this module-level flag rather than threading a readOnly param through the whole
+// render tree. The GM's own view (Roster tab's expanded editor) always renders with this
+// false, regardless of a character's lock state, since locking only restricts players.
+let sheetLocked = false;
 
 // Basic is the default starting point (character creation); a viewer who explicitly
 // picks Advanced has that remembered, same as every other per-viewer preference here.
@@ -387,7 +406,7 @@ async function saveRoomKey(key) {
 
 /* ---------- roster (GM-managed index) ---------- */
 function defaultRosterEntry(id) {
-  return { id, access: "gm", ownerId: null };
+  return { id, access: "gm", ownerId: null, locked: false };
 }
 function normalizeRoster(raw) {
   if (!Array.isArray(raw)) return [];
@@ -397,10 +416,14 @@ function normalizeRoster(raw) {
       id: r.id,
       access: ["gm", "everyone", "assigned"].includes(r.access) ? r.access : "gm",
       ownerId: typeof r.ownerId === "string" ? r.ownerId : null,
+      locked: !!r.locked,
     }));
 }
 function getRoster() {
   return normalizeRoster(roomMeta[ROOM_KEYS.roster]);
+}
+function rosterEntryFor(id) {
+  return getRoster().find((r) => r.id === id) || null;
 }
 function updateRoster(mutator) {
   const r = getRoster();
@@ -638,8 +661,17 @@ function renderMySheetTab() {
     wrap.appendChild(pickerWrap);
   }
 
+  const entry = rosterEntryFor(activeCharacterId);
+  sheetLocked = !isGM() && !!entry && entry.locked;
+  if (sheetLocked) {
+    wrap.appendChild(
+      el("div", { class: "locked-banner" }, [lockIcon(true), el("span", { text: "Locked by your GM — you can view this sheet, but not edit it." })])
+    );
+  }
+
   const { character, save } = bindCharacter(activeCharacterId);
   wrap.appendChild(renderCharacterSheet(character, save));
+  sheetLocked = false;
   return wrap;
 }
 
@@ -658,6 +690,7 @@ function textField(label, value, onInput, opts = {}) {
     class: "field-input",
     value: value || "",
     placeholder: opts.placeholder || "",
+    disabled: sheetLocked || undefined,
     oninput: (e) => onInput(e.target.value),
   });
   wrap.appendChild(input);
@@ -669,6 +702,7 @@ function textAreaField(label, value, onInput, opts = {}) {
   const area = el("textarea", {
     class: "field-textarea" + (opts.tall ? " field-textarea-tall" : ""),
     placeholder: opts.placeholder || "",
+    disabled: sheetLocked || undefined,
     oninput: (e) => onInput(e.target.value),
   });
   area.value = value || "";
@@ -683,6 +717,7 @@ function numberCircle(labelText, value, onInput, opts = {}) {
       type: "text",
       inputmode: "numeric",
       value: value || "",
+      disabled: sheetLocked || undefined,
       oninput: (e) => onInput(e.target.value),
     })
   );
@@ -691,22 +726,24 @@ function numberCircle(labelText, value, onInput, opts = {}) {
   return block;
 }
 function statusPillField(labelText, current, second, onCurrent, onSecond, opts = {}) {
+  const locked = sheetLocked;
   const block = el("div", { class: "pill-block" });
   block.appendChild(el("div", { class: "stat-label", text: labelText }));
 
   const pill = el("div", { class: "status-pill" });
   const stepper = el("div", { class: "pill-stepper" });
   const step = (delta) => {
+    if (locked) return;
     const next = Math.max(0, (parseInt(current, 10) || 0) + delta);
     onCurrent(String(next));
     refreshTabContent();
   };
-  stepper.appendChild(el("button", { type: "button", class: "pill-step-btn up", title: "Increase", onclick: () => step(1) }));
-  stepper.appendChild(el("button", { type: "button", class: "pill-step-btn down", title: "Decrease", onclick: () => step(-1) }));
+  stepper.appendChild(el("button", { type: "button", class: "pill-step-btn up", title: "Increase", disabled: locked || undefined, onclick: () => step(1) }));
+  stepper.appendChild(el("button", { type: "button", class: "pill-step-btn down", title: "Decrease", disabled: locked || undefined, onclick: () => step(-1) }));
   pill.appendChild(stepper);
-  pill.appendChild(el("input", { type: "text", inputmode: "numeric", value: current || "", oninput: (e) => onCurrent(e.target.value) }));
+  pill.appendChild(el("input", { type: "text", inputmode: "numeric", value: current || "", disabled: locked || undefined, oninput: (e) => onCurrent(e.target.value) }));
   pill.appendChild(el("span", { class: "pill-divider", text: "/" }));
-  pill.appendChild(el("input", { type: "text", inputmode: "numeric", value: second || "", oninput: (e) => onSecond(e.target.value) }));
+  pill.appendChild(el("input", { type: "text", inputmode: "numeric", value: second || "", disabled: locked || undefined, oninput: (e) => onSecond(e.target.value) }));
   block.appendChild(pill);
 
   block.appendChild(el("div", { class: "pill-caption" }, [el("span", { text: "Current" }), el("span", { text: opts.secondLabel || "Max" })]));
@@ -723,6 +760,7 @@ function renderLineList(character, save, key, opts) {
         class: "field-input",
         value: item.text,
         placeholder: opts.placeholder || "",
+        disabled: sheetLocked || undefined,
         oninput: (e) => {
           item.text = e.target.value;
           save();
@@ -735,6 +773,7 @@ function renderLineList(character, save, key, opts) {
         {
           class: "trash-btn",
           title: "Remove",
+          disabled: sheetLocked || undefined,
           onclick: () => {
             showConfirmDialog(`Remove this ${opts.singular || "item"}?`, () => {
               character[key] = character[key].filter((x) => x.id !== item.id);
@@ -755,6 +794,7 @@ function renderLineList(character, save, key, opts) {
       el("button", {
         class: "add-row-btn",
         text: "+ Add " + (opts.singular || "item"),
+        disabled: sheetLocked || undefined,
         onclick: () => {
           character[key].push({ id: uid(), text: "" });
           save();
@@ -771,7 +811,7 @@ function renderLineList(character, save, key, opts) {
 function lineListSectionHeader(title, onAdd) {
   return el("div", { class: "list-section-header" }, [
     el("span", { text: title }),
-    el("button", { type: "button", class: "list-add-btn", title: "Add " + title.toLowerCase(), onclick: onAdd }, ["+"]),
+    el("button", { type: "button", class: "list-add-btn", title: "Add " + title.toLowerCase(), disabled: sheetLocked || undefined, onclick: onAdd }, ["+"]),
   ]);
 }
 // A panel's own dark title bar, with the same "+" add control from lineListSectionHeader
@@ -781,7 +821,7 @@ function lineListSectionHeader(title, onAdd) {
 function panelHeaderWithAdd(title, onAdd) {
   return el("div", { class: "panel-header panel-header-with-add" }, [
     el("span", {}, [title]),
-    el("button", { type: "button", class: "list-add-btn", title: "Add " + title.toLowerCase(), onclick: onAdd }, ["+"]),
+    el("button", { type: "button", class: "list-add-btn", title: "Add " + title.toLowerCase(), disabled: sheetLocked || undefined, onclick: onAdd }, ["+"]),
   ]);
 }
 
@@ -885,6 +925,7 @@ function classSelect(character, save) {
     "select",
     {
       class: "field-input",
+      disabled: sheetLocked || undefined,
       onchange: (e) => {
         character.class = e.target.value || null;
         save();
@@ -989,9 +1030,11 @@ function stepPanel(number, title, bodyChildren) {
 function classCard(character, save, key) {
   const cls = CLASSES[key];
   const selected = character.class === key;
+  const locked = sheetLocked;
   const card = el("div", {
-    class: "class-card" + (selected ? " selected" : ""),
+    class: "class-card" + (selected ? " selected" : "") + (locked ? " locked-noninteractive" : ""),
     onclick: () => {
+      if (locked) return;
       character.class = selected ? null : key;
       save();
       refreshTabContent();
@@ -1010,6 +1053,7 @@ function classCard(character, save, key) {
     const select = el(
       "select",
       {
+        disabled: sheetLocked || undefined,
         onchange: (e) => { character.classStatChoice = e.target.value; save(); },
       },
       STAT_KEYS.map((k) => el("option", { value: k, text: STAT_LABELS[k], selected: character.classStatChoice === k ? "selected" : undefined }))
@@ -1043,7 +1087,7 @@ function skillTreeNode(character, save, skillId) {
   const btn = el("button", {
     class: "skill-node-btn" + (active ? " " + skill.tier : ""),
     "data-skill-id": skillId,
-    disabled: skill.tier !== "trained" && !met ? "disabled" : undefined,
+    disabled: sheetLocked || (skill.tier !== "trained" && !met) ? "disabled" : undefined,
     title: active ? "Click to clear" : `Take as ${skill.tier}`,
     onclick: () => toggleCharacterSkill(character, save, skillId, skill.tier),
   });
@@ -1230,6 +1274,8 @@ function statusReportRow(character, save, keys) {
    Roster tab (GM only)
    ========================================================================= */
 function renderRosterTab() {
+  // The GM's own editor is never subject to a character's lock — only players are.
+  sheetLocked = false;
   const wrap = el("div", { class: "section-title-wrap" });
   const title = el("div", { class: "section-title" }, [
     el("span", { text: "Roster" }),
@@ -1297,6 +1343,24 @@ function renderRosterTab() {
           },
         },
         accessOptions
+      )
+    );
+    row.appendChild(
+      el(
+        "button",
+        {
+          type: "button",
+          class: "icon-btn lock-toggle-btn" + (entry.locked ? " active" : ""),
+          title: entry.locked ? "Locked — players can view but not edit. Click to unlock." : "Unlocked — players with access can edit. Click to lock.",
+          onclick: () => {
+            updateRoster((r) => {
+              const target = r.find((x) => x.id === entry.id);
+              if (target) target.locked = !target.locked;
+            });
+            refreshTabContent();
+          },
+        },
+        [lockIcon(entry.locked)]
       )
     );
     const expanded = expandedRosterId === entry.id;
