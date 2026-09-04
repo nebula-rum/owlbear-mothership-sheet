@@ -70,9 +70,9 @@ margin left:
 
 - **Personal Details labels** ("Character Name", "Pronouns", "Player Name") must fit on
   one line in the Basic view's identity column — this already required a dedicated
-  layout pass (see `CLAUDE.md` / the git history around the "identity-stats-row" ratio).
-  A translated label meaningfully longer than its English source will wrap, which we
-  specifically fixed English text to avoid.
+  layout pass (see the git history around the "identity-stats-row" ratio). A translated
+  label meaningfully longer than its English source will wrap, which we specifically
+  fixed English text to avoid.
 - **Stat/Save labels** (Strength/Speed/Intellect/Combat, Sanity/Fear/Body) render as
   4-across and 3-across rows of small circles in the Basic view's compact mode
   (`.circle-row.compact`) — the row's own *label text width*, not the circle, is what

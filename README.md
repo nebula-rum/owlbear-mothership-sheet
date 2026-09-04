@@ -62,8 +62,8 @@ outside Owlbear first — it falls back to local-only storage automatically in t
 - Don't rename the manifest file to `manifest.json` if you ever deploy via Netlify Drop —
   it 401s there. `owlbear-extension.json` is fine as-is.
 
-See `CLAUDE.md` and `docs/DEVELOPMENT-LOG.md` for the full architecture writeup and build
-history, and `docs/OWLBEAR-CHARACTER-SHEET-EXTENSION-GUIDE.md` for the general (non-
-Mothership-specific) patterns this extension was built from.
+See `docs/DEVELOPMENT-LOG.md` for the full architecture writeup and build history, and
+`docs/OWLBEAR-CHARACTER-SHEET-EXTENSION-GUIDE.md` for the general (non-Mothership-
+specific) patterns this extension was built from.
 
 PRs and forks welcome.

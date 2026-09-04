@@ -2,8 +2,8 @@ import OBR from "./obr-sdk.bundle.js";
 
 /* =========================================================================
    Mothership — Character Profile
-   Single-file app (data model, rendering) — see CLAUDE.md / docs/DEVELOPMENT-LOG.md
-   for the architecture this was built from (ported from nebula-rum/owlbear-mist-sheet).
+   Single-file app (data model, rendering) — see docs/DEVELOPMENT-LOG.md for the
+   architecture this was built from (ported from nebula-rum/owlbear-mist-sheet).
    ========================================================================= */
 
 const THEME_KEY = "mothership-sheet-theme"; // "light" | "dark"

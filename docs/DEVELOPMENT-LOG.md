@@ -1,8 +1,7 @@
 # Development log
 
-> Read `../CLAUDE.md` first for a concise orientation. This is the pass-by-pass record
-> of design decisions behind this build — check it before assuming something odd is an
-> oversight.
+> This is the pass-by-pass record of design decisions behind this build — check it
+> before assuming something odd is an oversight.
 
 ## Research pass: confirming no existing Mothership sheet exists
 
@@ -69,8 +68,8 @@ Resolved by cross-checking the vector-derived edges against high-resolution crop
 actual PDF region rendered as images (`page.get_pixmap` at 8–12x zoom) and reading the
 connector paths directly, region by region, rather than trusting either method alone. The
 final 40-edge, 42-node graph (`SKILLS` in `app.js`) was verified this way end to end
-before being transcribed as code — see `CLAUDE.md`'s note not to "fix" a surprising-
-looking edge without re-checking the source PDF first.
+before being transcribed as code — don't "fix" a surprising-looking edge without
+re-checking the source PDF first.
 
 ## Build
 
