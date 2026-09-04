@@ -237,7 +237,7 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
 /* Compact variant — the Basic view's Stats/Saves boxes sit in a narrower half-column
    (next to Personal Details) than the Advanced view's, so all 4 stat circles need to
    fit on one row without wrapping. */
-.circle-row.compact { gap: 4px; }
+.circle-row.compact { gap: 3px; }
 .stat-circle.compact { width: 40px; height: 40px; border-width: 2px; }
 .stat-circle.compact input { font-size: 13px; }
 .stat-block.compact .stat-label { font-size: 9px; }
@@ -458,6 +458,19 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
   flex: none;
 }
 .list-add-btn:hover { background: var(--muted-fill); }
+/* A panel's own title bar doubling as the add-item control (Advanced view's Equipment/
+   Weapons) — the title stays centered like every other panel header, the "+" button is
+   pinned to the right edge on top of it instead of pushing the text off-center. */
+.panel-header-with-add { position: relative; }
+.panel-header-with-add .list-add-btn {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-color: var(--bg);
+  color: var(--bg);
+}
+.panel-header-with-add .list-add-btn:hover { background: color-mix(in srgb, var(--bg) 20%, transparent); }
 /* ---------- generic buttons ---------- */
 .btn {
   border: 2px solid var(--border);
@@ -517,13 +530,14 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
 @media (max-width: 560px) {
   .health-stress-row { grid-template-columns: 1fr; }
 }
-/* Personal Details only holds single-line fields (no portrait, no inline notes box
-   anymore), so it needs less room than Stats/Saves, which needs space for its circles. */
-.identity-stats-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 12px; align-items: start; }
-/* Tighter than the default panel-body padding — the compact stat/save circles need
-   every spare pixel to fit 4-across without wrapping (label text, not the circle
-   itself, is the real width constraint: e.g. "INTELLECT" is wider than a 40px circle). */
-.identity-stats-row .panel-body { padding: 12px 10px; }
+/* Personal Details gets a bit less than Stats/Saves (which still needs room for its
+   circles), but not by much — its fields want real breathing room too. */
+.identity-stats-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 12px; align-items: start; }
+/* Tighter than the default panel-body padding, and only on the Stats/Saves side — the
+   compact circles need every spare pixel to fit 4-across without wrapping (label text,
+   not the circle itself, is the real width constraint: e.g. "INTELLECT" is wider than a
+   40px circle). Personal Details keeps the default padding since it has room to spare. */
+.identity-stats-row > .stack .panel-body { padding: 10px 8px; }
 @media (max-width: 560px) {
   .identity-stats-row { grid-template-columns: 1fr; }
 }

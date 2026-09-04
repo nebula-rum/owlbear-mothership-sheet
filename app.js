@@ -771,6 +771,16 @@ function lineListSectionHeader(title, onAdd) {
     el("button", { type: "button", class: "list-add-btn", title: "Add " + title.toLowerCase(), onclick: onAdd }, ["+"]),
   ]);
 }
+// A panel's own dark title bar, with the same "+" add control from lineListSectionHeader
+// pinned to its right edge instead of sitting in a separate row below it — used where the
+// panel header already names the list (Advanced view's Equipment/Weapons), so the title
+// stays centered like every other panel header while the button floats over it.
+function panelHeaderWithAdd(title, onAdd) {
+  return el("div", { class: "panel-header panel-header-with-add" }, [
+    el("span", {}, [title]),
+    el("button", { type: "button", class: "list-add-btn", title: "Add " + title.toLowerCase(), onclick: onAdd }, ["+"]),
+  ]);
+}
 
 function statusReportSection(character, save) {
   const wrap = el("div");
@@ -801,9 +811,15 @@ function skillTrainingSection(character, save) {
 
 function equipmentPanel(character, save) {
   const wrap = el("div", { class: "panel" });
-  wrap.appendChild(el("div", { class: "panel-header", text: "Equipment" }));
+  wrap.appendChild(
+    panelHeaderWithAdd("Equipment", () => {
+      character.equipment.push({ id: uid(), text: "" });
+      save();
+      refreshTabContent();
+    })
+  );
   const body = el("div", { class: "panel-body" });
-  body.appendChild(renderLineList(character, save, "equipment", { singular: "item", placeholder: "Equipment item…" }));
+  body.appendChild(renderLineList(character, save, "equipment", { singular: "item", placeholder: "Equipment item…", hideAddButton: true }));
   const row = el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;" });
   row.appendChild(textField("Armor Points", character.armorPoints, (v) => { character.armorPoints = v; save(); }));
   row.appendChild(textField("Credits", character.credits, (v) => { character.credits = v; save(); }));
@@ -813,9 +829,15 @@ function equipmentPanel(character, save) {
 }
 function weaponsPanel(character, save) {
   const wrap = el("div", { class: "panel" });
-  wrap.appendChild(el("div", { class: "panel-header", text: "Weapons" }));
+  wrap.appendChild(
+    panelHeaderWithAdd("Weapons", () => {
+      character.weapons.push({ id: uid(), text: "" });
+      save();
+      refreshTabContent();
+    })
+  );
   const body = el("div", { class: "panel-body" });
-  body.appendChild(renderLineList(character, save, "weapons", { singular: "weapon", placeholder: "Weapon…" }));
+  body.appendChild(renderLineList(character, save, "weapons", { singular: "weapon", placeholder: "Weapon…", hideAddButton: true }));
   wrap.appendChild(body);
   return wrap;
 }
@@ -997,7 +1019,7 @@ function classCard(character, save, key) {
 function classStepPanel(character, save) {
   const grid = el("div", { class: "class-grid" });
   CLASS_ORDER.forEach((key) => grid.appendChild(classCard(character, save, key)));
-  return stepPanel(3, "Select Your Class — adjust your starting Stats & Saves", [
+  return stepPanel(3, "Select Your Class", [
     el("div", { class: "hint", text: "Tap a class to select it. Its stat/save bonuses are shown for reference — add them to your rolled Stats & Saves above yourself." }),
     grid,
   ]);
@@ -1126,8 +1148,8 @@ function renderCharacterSheetBasic(character, save) {
   const identityAndStats = el("div", { class: "identity-stats-row" });
   identityAndStats.appendChild(header);
   const statsStack = el("div", { class: "stack" });
-  statsStack.appendChild(stepPanel(1, "Roll 2d10+25 for each Stat", [statsAndSavesSectionStatsOnly(character, save, { compact: true })]));
-  statsStack.appendChild(stepPanel(2, "Roll 2d10+10 for each Save", [statsAndSavesSectionSavesOnly(character, save, { compact: true })]));
+  statsStack.appendChild(stepPanel(1, "Roll 2d10+25", [statsAndSavesSectionStatsOnly(character, save, { compact: true })]));
+  statsStack.appendChild(stepPanel(2, "Roll 2d10+10", [statsAndSavesSectionSavesOnly(character, save, { compact: true })]));
   identityAndStats.appendChild(statsStack);
   left.appendChild(identityAndStats);
 
@@ -1137,11 +1159,11 @@ function renderCharacterSheetBasic(character, save) {
   // sheet's row — Health/Wounds gets more room since it holds two pills to Stress's one.
   const healthStressRow = el("div", { class: "health-stress-row" });
   healthStressRow.appendChild(
-    stepPanel(4, "Roll 1d10+10 for your Health — starts at Maximum with 0 Wounds", [
+    stepPanel(4, "Roll 1d10+10 for Health — starts at Max and 0 Wounds", [
       statusReportRow(character, save, ["health", "wounds"]),
     ])
   );
-  healthStressRow.appendChild(stepPanel(5, "Gain Stress — starts at 2", [statusReportRow(character, save, ["stress"])]));
+  healthStressRow.appendChild(stepPanel(5, "Stress — starts at 2", [statusReportRow(character, save, ["stress"])]));
   left.appendChild(healthStressRow);
 
   left.appendChild(traumaStepPanel(character));
