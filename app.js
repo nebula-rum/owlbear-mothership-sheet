@@ -556,7 +556,10 @@ function renderTopbar() {
   const ns = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(ns, "svg");
   svg.setAttribute("viewBox", "0 0 32 32");
-  svg.innerHTML = '<path d="M8 22V10l5 7 5-7 5 7 1-1.2" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+  svg.innerHTML =
+    '<path d="M7.08 25.45 L7.08 7.08 L16 20.2 L24.92 7.08 L24.92 25.45" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="square" stroke-linejoin="miter"/>' +
+    '<path d="M8.39 25.45 L8.39 11.34 L16 22.54 L23.61 11.34 L23.61 25.45" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="square" stroke-linejoin="miter"/>' +
+    '<path d="M9.7 25.45 L9.7 15.61 L16 24.86 L22.3 15.61 L22.3 25.45" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="square" stroke-linejoin="miter"/>';
   mark.appendChild(svg);
   brand.appendChild(mark);
   brand.appendChild(el("span", { text: "Mothership" }));
