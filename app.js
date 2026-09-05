@@ -92,7 +92,7 @@ const STAT_LABELS = {
   strength: { en: "Strength", it: "Forza" },
   speed: { en: "Speed", it: "Velocità" },
   intellect: { en: "Intellect", it: "Intelletto" },
-  combat: { en: "Combat", it: "Combattimento" },
+  combat: { en: "Combat", it: "Combat" },
 };
 const SAVE_KEYS = ["sanity", "fear", "body"];
 const SAVE_LABELS = {
@@ -170,9 +170,9 @@ function skillsInColumn(tier) {
     .sort((a, b) => a[1].row - b[1].row);
 }
 const TIER_LABELS = {
-  trained: { en: "trained", it: "addestrata" },
-  expert: { en: "expert", it: "esperta" },
-  master: { en: "master", it: "da maestro" },
+  trained: { en: "trained", it: "addestrato" },
+  expert: { en: "expert", it: "esperto" },
+  master: { en: "master", it: "maestro" },
 };
 
 /* =========================================================================
@@ -206,8 +206,8 @@ const STRINGS = {
   trinket: { en: "Trinket", it: "Trinket" },
   patch: { en: "Patch", it: "Toppa" },
   stats: { en: "Stats", it: "Caratteristiche" },
-  saves: { en: "Saves", it: "Salvezze" },
-  statusReport: { en: "Status Report", it: "Rapporto di Stato" },
+  saves: { en: "Saves", it: "Tiri Salvezza" },
+  statusReport: { en: "Status Report", it: "Rapporto di Salute" },
   health: { en: "Health", it: "Salute" },
   wounds: { en: "Wounds", it: "Ferite" },
   stress: { en: "Stress", it: "Stress" },
@@ -260,9 +260,9 @@ const STRINGS = {
     it: "Per scegliere un'Abilità da Maestro o Esperta devi prima possedere almeno una delle sue Abilità prerequisito elencate. Tocca un pallino per scegliere quell'Abilità a quel livello; toccalo di nuovo per annullare.",
   },
   step8Title: { en: "Roll for Your Equipment Loadout, Trinket & Patch", it: "Tira per il Tuo Loadout, Trinket e Toppa" },
-  trainedTier: { en: "Trained (+10)", it: "Addestrate (+10)" },
-  expertTier: { en: "Expert (+15)", it: "Esperte (+15)" },
-  masterTier: { en: "Master (+20)", it: "Da Maestro (+20)" },
+  trainedTier: { en: "Trained (+10)", it: "Addestrato (+10)" },
+  expertTier: { en: "Expert (+15)", it: "Esperto (+15)" },
+  masterTier: { en: "Master (+20)", it: "Maestro (+20)" },
   requires: { en: "requires", it: "richiede" },
   or: { en: "or", it: "o" },
   clickToClear: { en: "Click to clear", it: "Tocca per annullare" },
