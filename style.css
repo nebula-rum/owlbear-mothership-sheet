@@ -241,6 +241,12 @@ input, textarea, select { font-family: inherit; color: var(--ink); background: v
 .stat-circle.compact { width: 40px; height: 40px; border-width: 2px; }
 .stat-circle.compact input { font-size: 13px; }
 .stat-block.compact .stat-label { font-size: 9px; }
+/* Italian stat/save names run longer than English ("Combattimento" vs "Combat") — on
+   their own that would push the 4th compact circle onto a second row. Rather than
+   shrinking the font (hurts legibility) or widening the column (English already fits
+   comfortably as-is), let a long compact label wrap onto two lines under its own
+   circle instead — keeps every circle on one row without touching English's sizing. */
+[data-locale="it"] .stat-block.compact .stat-label { max-width: 44px; white-space: normal; hyphens: auto; overflow-wrap: break-word; line-height: 1.15; }
 
 .stat-label {
   font-size: 11px;
