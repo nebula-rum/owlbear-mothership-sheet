@@ -8,6 +8,7 @@ import OBR from "./obr-sdk.bundle.js";
 
 const THEME_KEY = "mothership-sheet-theme"; // "light" | "dark"
 const VIEW_KEY = "mothership-sheet-view"; // "advanced" | "basic"
+const LOCALE_KEY = "mothership-sheet-locale"; // "en" | "it"
 const LOCAL_ROOM_KEY = "mothership-sheet-room"; // standalone/local-preview fallback
 
 const ROOM_KEYS = {
@@ -27,54 +28,78 @@ function characterKey(id) {
    ========================================================================= */
 const CLASSES = {
   marine: {
-    label: "Marine",
-    statBonusText: "+10 Combat",
-    saveBonusText: "+10 Body Save, +20 Fear Save",
-    woundsBonusText: "+1 Max Wounds",
-    startingSkillsText: "Military Training, Athletics",
-    bonusSkillText: "Bonus: 1 Expert Skill OR 2 Trained Skills",
-    trauma: "Whenever you panic, every close friendly player must make a Fear save.",
+    label: { en: "Marine", it: "Marine" },
+    statBonusText: { en: "+10 Combat", it: "+10 Combattimento" },
+    saveBonusText: { en: "+10 Body Save, +20 Fear Save", it: "+10 Salvezza Corpo, +20 Salvezza Paura" },
+    woundsBonusText: { en: "+1 Max Wounds", it: "+1 Ferite Massime" },
+    startingSkillsText: { en: "Military Training, Athletics", it: "Addestramento Militare, Atletica" },
+    bonusSkillText: { en: "Bonus: 1 Expert Skill OR 2 Trained Skills", it: "Bonus: 1 Abilità Esperta OPPURE 2 Abilità Addestrate" },
+    trauma: {
+      en: "Whenever you panic, every close friendly player must make a Fear save.",
+      it: "Ogni volta che vai nel panico, ogni alleato a corto raggio deve effettuare una salvezza di paura.",
+    },
     maxWoundsBonus: 1,
   },
   android: {
-    label: "Android",
-    statBonusText: "+20 Intellect, −10 to 1 stat",
-    saveBonusText: "+60 Fear Save",
-    woundsBonusText: "+1 Max Wounds",
-    startingSkillsText: "Linguistics, Computers, Mathematics",
-    bonusSkillText: "Bonus: 1 Expert Skill OR 2 Trained Skills",
-    trauma: "Fear saves made by close friendly players are at disadvantage.",
+    label: { en: "Android", it: "Android" },
+    statBonusText: { en: "+20 Intellect, −10 to 1 stat", it: "+20 Intelletto, −10 a una caratteristica a scelta" },
+    saveBonusText: { en: "+60 Fear Save", it: "+60 Salvezza Paura" },
+    woundsBonusText: { en: "+1 Max Wounds", it: "+1 Ferite Massime" },
+    startingSkillsText: { en: "Linguistics, Computers, Mathematics", it: "Linguistica, Informatica, Matematica" },
+    bonusSkillText: { en: "Bonus: 1 Expert Skill OR 2 Trained Skills", it: "Bonus: 1 Abilità Esperta OPPURE 2 Abilità Addestrate" },
+    trauma: {
+      en: "Fear saves made by close friendly players are at disadvantage.",
+      it: "Le salvezze di paura degli alleati a corto raggio sono effettuate con svantaggio.",
+    },
     statPenaltyChoice: true,
     maxWoundsBonus: 1,
   },
   scientist: {
-    label: "Scientist",
-    statBonusText: "+10 Intellect, +5 to 1 stat",
-    saveBonusText: "+30 Sanity Save",
-    woundsBonusText: "",
-    startingSkillsText: "1 Master Skill, and an Expert and Trained Skill prerequisite.",
-    bonusSkillText: "Bonus: 1 Trained Skill",
-    trauma: "Whenever you fail a Sanity save, all close friendly players gain 1 Stress.",
+    label: { en: "Scientist", it: "Scienziato/a" },
+    statBonusText: { en: "+10 Intellect, +5 to 1 stat", it: "+10 Intelletto, +5 a una caratteristica a scelta" },
+    saveBonusText: { en: "+30 Sanity Save", it: "+30 Salvezza Sanità" },
+    woundsBonusText: { en: "", it: "" },
+    startingSkillsText: {
+      en: "1 Master Skill, and an Expert and Trained Skill prerequisite.",
+      it: "1 Abilità da Maestro, con un prerequisito di Abilità Esperta e Addestrata.",
+    },
+    bonusSkillText: { en: "Bonus: 1 Trained Skill", it: "Bonus: 1 Abilità Addestrata" },
+    trauma: {
+      en: "Whenever you fail a Sanity save, all close friendly players gain 1 Stress.",
+      it: "Ogni volta che fallisci una salvezza di sanità, tutti gli alleati a corto raggio guadagnano 1 Stress.",
+    },
     statBonusChoice: true,
     maxWoundsBonus: 0,
   },
   teamster: {
-    label: "Teamster",
-    statBonusText: "+5 to all stats",
-    saveBonusText: "+10 to all saves",
-    woundsBonusText: "",
-    startingSkillsText: "Industrial Equipment, Zero-G",
-    bonusSkillText: "Bonus: 1 Trained Skill and 1 Expert Skill.",
-    trauma: "Once per session, you may take advantage on a Panic check.",
+    label: { en: "Teamster", it: "Teamster" },
+    statBonusText: { en: "+5 to all stats", it: "+5 a tutte le caratteristiche" },
+    saveBonusText: { en: "+10 to all saves", it: "+10 a tutte le salvezze" },
+    woundsBonusText: { en: "", it: "" },
+    startingSkillsText: { en: "Industrial Equipment, Zero-G", it: "Attrezzature Industriali, Zero-G" },
+    bonusSkillText: { en: "Bonus: 1 Trained Skill and 1 Expert Skill.", it: "Bonus: 1 Abilità Addestrata e 1 Abilità Esperta." },
+    trauma: {
+      en: "Once per session, you may take advantage on a Panic check.",
+      it: "Una volta per sessione, puoi ottenere vantaggio su una prova di panico.",
+    },
     maxWoundsBonus: 0,
   },
 };
 const CLASS_ORDER = ["marine", "android", "scientist", "teamster"];
 
 const STAT_KEYS = ["strength", "speed", "intellect", "combat"];
-const STAT_LABELS = { strength: "Strength", speed: "Speed", intellect: "Intellect", combat: "Combat" };
+const STAT_LABELS = {
+  strength: { en: "Strength", it: "Forza" },
+  speed: { en: "Speed", it: "Velocità" },
+  intellect: { en: "Intellect", it: "Intelletto" },
+  combat: { en: "Combat", it: "Combattimento" },
+};
 const SAVE_KEYS = ["sanity", "fear", "body"];
-const SAVE_LABELS = { sanity: "Sanity", fear: "Fear", body: "Body" };
+const SAVE_LABELS = {
+  sanity: { en: "Sanity", it: "Sanità" },
+  fear: { en: "Fear", it: "Paura" },
+  body: { en: "Body", it: "Corpo" },
+};
 
 /* =========================================================================
    Reference data: skill tree
@@ -90,52 +115,52 @@ const SAVE_LABELS = { sanity: "Sanity", fear: "Fear", body: "Body" };
    ========================================================================= */
 const SKILLS = {
   // Trained (no prerequisite)
-  linguistics: { label: "Linguistics", tier: "trained", row: 0, prereqs: [] },
-  zoology: { label: "Zoology", tier: "trained", row: 1, prereqs: [] },
-  botany: { label: "Botany", tier: "trained", row: 3, prereqs: [] },
-  geology: { label: "Geology", tier: "trained", row: 4, prereqs: [] },
-  "industrial-equipment": { label: "Industrial Equipment", tier: "trained", row: 5, prereqs: [] },
-  "jury-rigging": { label: "Jury-Rigging", tier: "trained", row: 6, prereqs: [] },
-  chemistry: { label: "Chemistry", tier: "trained", row: 7, prereqs: [] },
-  computers: { label: "Computers", tier: "trained", row: 8, prereqs: [] },
-  "zero-g": { label: "Zero-G", tier: "trained", row: 9, prereqs: [] },
-  mathematics: { label: "Mathematics", tier: "trained", row: 10, prereqs: [] },
-  art: { label: "Art", tier: "trained", row: 11, prereqs: [] },
-  archaeology: { label: "Archaeology", tier: "trained", row: 12, prereqs: [] },
-  theology: { label: "Theology", tier: "trained", row: 13, prereqs: [] },
-  "military-training": { label: "Military Training", tier: "trained", row: 14, prereqs: [] },
-  rimwise: { label: "Rimwise", tier: "trained", row: 15, prereqs: [] },
-  athletics: { label: "Athletics", tier: "trained", row: 16, prereqs: [] },
+  linguistics: { label: { en: "Linguistics", it: "Linguistica" }, tier: "trained", row: 0, prereqs: [] },
+  zoology: { label: { en: "Zoology", it: "Zoologia" }, tier: "trained", row: 1, prereqs: [] },
+  botany: { label: { en: "Botany", it: "Botanica" }, tier: "trained", row: 3, prereqs: [] },
+  geology: { label: { en: "Geology", it: "Geologia" }, tier: "trained", row: 4, prereqs: [] },
+  "industrial-equipment": { label: { en: "Industrial Equipment", it: "Attrezzature Industriali" }, tier: "trained", row: 5, prereqs: [] },
+  "jury-rigging": { label: { en: "Jury-Rigging", it: "Riparazioni di Fortuna" }, tier: "trained", row: 6, prereqs: [] },
+  chemistry: { label: { en: "Chemistry", it: "Chimica" }, tier: "trained", row: 7, prereqs: [] },
+  computers: { label: { en: "Computers", it: "Informatica" }, tier: "trained", row: 8, prereqs: [] },
+  "zero-g": { label: { en: "Zero-G", it: "Zero-G" }, tier: "trained", row: 9, prereqs: [] },
+  mathematics: { label: { en: "Mathematics", it: "Matematica" }, tier: "trained", row: 10, prereqs: [] },
+  art: { label: { en: "Art", it: "Arte" }, tier: "trained", row: 11, prereqs: [] },
+  archaeology: { label: { en: "Archaeology", it: "Archeologia" }, tier: "trained", row: 12, prereqs: [] },
+  theology: { label: { en: "Theology", it: "Teologia" }, tier: "trained", row: 13, prereqs: [] },
+  "military-training": { label: { en: "Military Training", it: "Addestramento Militare" }, tier: "trained", row: 14, prereqs: [] },
+  rimwise: { label: { en: "Rimwise", it: "Scaltrezza di Frontiera" }, tier: "trained", row: 15, prereqs: [] },
+  athletics: { label: { en: "Athletics", it: "Atletica" }, tier: "trained", row: 16, prereqs: [] },
 
   // Expert
-  psychology: { label: "Psychology", tier: "expert", row: 0, prereqs: ["linguistics", "zoology"] },
-  pathology: { label: "Pathology", tier: "expert", row: 1, prereqs: ["zoology"] },
-  "field-medicine": { label: "Field Medicine", tier: "expert", row: 2, prereqs: ["zoology"] },
-  ecology: { label: "Ecology", tier: "expert", row: 3, prereqs: ["botany"] },
-  "asteroid-mining": { label: "Asteroid Mining", tier: "expert", row: 4, prereqs: ["geology"] },
-  "mechanical-repair": { label: "Mechanical Repair", tier: "expert", row: 5, prereqs: ["industrial-equipment", "jury-rigging"] },
-  explosives: { label: "Explosives", tier: "expert", row: 6, prereqs: ["jury-rigging", "chemistry", "military-training"] },
-  pharmacology: { label: "Pharmacology", tier: "expert", row: 7, prereqs: ["chemistry"] },
-  hacking: { label: "Hacking", tier: "expert", row: 8, prereqs: ["computers"] },
-  piloting: { label: "Piloting", tier: "expert", row: 9, prereqs: ["zero-g"] },
-  physics: { label: "Physics", tier: "expert", row: 10, prereqs: ["mathematics"] },
-  mysticism: { label: "Mysticism", tier: "expert", row: 11, prereqs: ["art", "archaeology"] },
-  "wilderness-survival": { label: "Wilderness Survival", tier: "expert", row: 13, prereqs: ["botany", "theology", "military-training"] },
-  firearms: { label: "Firearms", tier: "expert", row: 14, prereqs: ["military-training", "rimwise"] },
-  "hand-to-hand-combat": { label: "Hand-to-Hand Combat", tier: "expert", row: 15, prereqs: ["rimwise", "military-training", "athletics"] },
+  psychology: { label: { en: "Psychology", it: "Psicologia" }, tier: "expert", row: 0, prereqs: ["linguistics", "zoology"] },
+  pathology: { label: { en: "Pathology", it: "Patologia" }, tier: "expert", row: 1, prereqs: ["zoology"] },
+  "field-medicine": { label: { en: "Field Medicine", it: "Medicina da Campo" }, tier: "expert", row: 2, prereqs: ["zoology"] },
+  ecology: { label: { en: "Ecology", it: "Ecologia" }, tier: "expert", row: 3, prereqs: ["botany"] },
+  "asteroid-mining": { label: { en: "Asteroid Mining", it: "Estrazione Asteroidale" }, tier: "expert", row: 4, prereqs: ["geology"] },
+  "mechanical-repair": { label: { en: "Mechanical Repair", it: "Riparazione Meccanica" }, tier: "expert", row: 5, prereqs: ["industrial-equipment", "jury-rigging"] },
+  explosives: { label: { en: "Explosives", it: "Esplosivi" }, tier: "expert", row: 6, prereqs: ["jury-rigging", "chemistry", "military-training"] },
+  pharmacology: { label: { en: "Pharmacology", it: "Farmacologia" }, tier: "expert", row: 7, prereqs: ["chemistry"] },
+  hacking: { label: { en: "Hacking", it: "Hacking" }, tier: "expert", row: 8, prereqs: ["computers"] },
+  piloting: { label: { en: "Piloting", it: "Pilotaggio" }, tier: "expert", row: 9, prereqs: ["zero-g"] },
+  physics: { label: { en: "Physics", it: "Fisica" }, tier: "expert", row: 10, prereqs: ["mathematics"] },
+  mysticism: { label: { en: "Mysticism", it: "Misticismo" }, tier: "expert", row: 11, prereqs: ["art", "archaeology"] },
+  "wilderness-survival": { label: { en: "Wilderness Survival", it: "Sopravvivenza in Natura" }, tier: "expert", row: 13, prereqs: ["botany", "theology", "military-training"] },
+  firearms: { label: { en: "Firearms", it: "Armi da Fuoco" }, tier: "expert", row: 14, prereqs: ["military-training", "rimwise"] },
+  "hand-to-hand-combat": { label: { en: "Hand-to-Hand Combat", it: "Combattimento Corpo a Corpo" }, tier: "expert", row: 15, prereqs: ["rimwise", "military-training", "athletics"] },
 
   // Master
-  sophontology: { label: "Sophontology", tier: "master", row: 0, prereqs: ["psychology"] },
-  exobiology: { label: "Exobiology", tier: "master", row: 1, prereqs: ["pathology"] },
-  surgery: { label: "Surgery", tier: "master", row: 2, prereqs: ["field-medicine", "pathology"] },
-  planetology: { label: "Planetology", tier: "master", row: 3, prereqs: ["ecology", "asteroid-mining"] },
-  robotics: { label: "Robotics", tier: "master", row: 4, prereqs: ["mechanical-repair"] },
-  engineering: { label: "Engineering", tier: "master", row: 5, prereqs: ["mechanical-repair"] },
-  cybernetics: { label: "Cybernetics", tier: "master", row: 6, prereqs: ["mechanical-repair"] },
-  "artificial-intelligence": { label: "Artificial Intelligence", tier: "master", row: 8, prereqs: ["hacking"] },
-  hyperspace: { label: "Hyperspace", tier: "master", row: 10, prereqs: ["physics", "piloting", "mysticism"] },
-  xenoesotericism: { label: "Xenoesotericism", tier: "master", row: 11, prereqs: ["mysticism"] },
-  command: { label: "Command", tier: "master", row: 14, prereqs: ["firearms", "piloting"] },
+  sophontology: { label: { en: "Sophontology", it: "Sofontologia" }, tier: "master", row: 0, prereqs: ["psychology"] },
+  exobiology: { label: { en: "Exobiology", it: "Esobiologia" }, tier: "master", row: 1, prereqs: ["pathology"] },
+  surgery: { label: { en: "Surgery", it: "Chirurgia" }, tier: "master", row: 2, prereqs: ["field-medicine", "pathology"] },
+  planetology: { label: { en: "Planetology", it: "Planetologia" }, tier: "master", row: 3, prereqs: ["ecology", "asteroid-mining"] },
+  robotics: { label: { en: "Robotics", it: "Robotica" }, tier: "master", row: 4, prereqs: ["mechanical-repair"] },
+  engineering: { label: { en: "Engineering", it: "Ingegneria" }, tier: "master", row: 5, prereqs: ["mechanical-repair"] },
+  cybernetics: { label: { en: "Cybernetics", it: "Cibernetica" }, tier: "master", row: 6, prereqs: ["mechanical-repair"] },
+  "artificial-intelligence": { label: { en: "Artificial Intelligence", it: "Intelligenza Artificiale" }, tier: "master", row: 8, prereqs: ["hacking"] },
+  hyperspace: { label: { en: "Hyperspace", it: "Iperspazio" }, tier: "master", row: 10, prereqs: ["physics", "piloting", "mysticism"] },
+  xenoesotericism: { label: { en: "Xenoesotericism", it: "Xenoesoterismo" }, tier: "master", row: 11, prereqs: ["mysticism"] },
+  command: { label: { en: "Command", it: "Comando" }, tier: "master", row: 14, prereqs: ["firearms", "piloting"] },
 };
 const SKILL_ROW_COUNT = 17;
 const SKILL_TIER_BONUS = { trained: 10, expert: 15, master: 20 };
@@ -144,6 +169,105 @@ function skillsInColumn(tier) {
     .filter(([, s]) => s.tier === tier)
     .sort((a, b) => a[1].row - b[1].row);
 }
+const TIER_LABELS = {
+  trained: { en: "trained", it: "addestrata" },
+  expert: { en: "expert", it: "esperta" },
+  master: { en: "master", it: "da maestro" },
+};
+
+/* =========================================================================
+   Localization
+   Character-sheet content only (field labels, section headers, step titles,
+   class/skill names) — reviewed and supplied by the user as a decided
+   translation, not machine-translated here. Surrounding app chrome (Roster
+   tab, topbar, confirm dialogs) intentionally stays English for now: it
+   wasn't part of that review, and t()/L() fall back to English automatically
+   for any key that has no "it" entry, so leaving it out here is enough.
+   `locale` is a per-viewer localStorage preference, same pattern as
+   `theme`/`sheetView` — never room state, each viewer picks independently.
+   ========================================================================= */
+function L(pair) {
+  if (pair && typeof pair === "object") return pair[locale] || pair.en || "";
+  return pair || "";
+}
+function t(key) {
+  const entry = STRINGS[key];
+  if (!entry) return key;
+  return entry[locale] || entry.en || key;
+}
+const STRINGS = {
+  personalDetails: { en: "Personal Details", it: "Dati Personali" },
+  playerName: { en: "Player Name", it: "Nome del Giocatore" },
+  characterName: { en: "Character Name", it: "Nome del Personaggio" },
+  pronouns: { en: "Pronouns", it: "Pronomi" },
+  personalNotes: { en: "Personal Notes", it: "Note Personali" },
+  class: { en: "Class", it: "Classe" },
+  highScore: { en: "High Score", it: "Record" },
+  trinket: { en: "Trinket", it: "Trinket" },
+  patch: { en: "Patch", it: "Toppa" },
+  stats: { en: "Stats", it: "Caratteristiche" },
+  saves: { en: "Saves", it: "Salvezze" },
+  statusReport: { en: "Status Report", it: "Rapporto di Stato" },
+  health: { en: "Health", it: "Salute" },
+  wounds: { en: "Wounds", it: "Ferite" },
+  stress: { en: "Stress", it: "Stress" },
+  current: { en: "Current", it: "Attuale" },
+  max: { en: "Max", it: "Max" },
+  min: { en: "Min", it: "Min" },
+  conditions: { en: "Conditions", it: "Condizioni" },
+  conditionsPlaceholder: { en: "Injuries, afflictions, cybernetics…", it: "Lesioni, patologie, impianti cibernetici…" },
+  skills: { en: "Skills", it: "Abilità" },
+  noSkillsChosen: {
+    en: "No skills chosen yet — switch to the Basic view to pick skills from the tree.",
+    it: "Nessuna Abilità scelta ancora — passa alla vista Basic per sceglierle dall'albero.",
+  },
+  skillTraining: { en: "Skill Training", it: "Addestramento Abilità" },
+  inProgress: { en: "In Progress", it: "In Corso" },
+  timeRemaining: { en: "Time Remaining", it: "Tempo Rimanente" },
+  equipment: { en: "Equipment", it: "Equipaggiamento" },
+  weapons: { en: "Weapons", it: "Armi" },
+  armorPoints: { en: "Armor Points", it: "Punti Armatura" },
+  credits: { en: "Credits", it: "Crediti" },
+  creditsDice: { en: "Credits (2d10×10)", it: "Crediti (2d10×10)" },
+  equipmentItemPlaceholder: { en: "Equipment item…", it: "Oggetto equipaggiamento…" },
+  weaponPlaceholder: { en: "Weapon…", it: "Arma…" },
+  itemSingular: { en: "item", it: "oggetto" },
+  weaponSingular: { en: "weapon", it: "arma" },
+  removeEquipmentConfirm: { en: "Remove this item?", it: "Rimuovere questo oggetto?" },
+  removeWeaponConfirm: { en: "Remove this weapon?", it: "Rimuovere questa arma?" },
+  add: { en: "Add", it: "Aggiungi" },
+  selectClassNoneOption: { en: "— none —", it: "— nessuna —" },
+  selectClassToSeeTrauma: {
+    en: "Select a class above to see its Trauma Response.",
+    it: "Seleziona una classe qui sopra per vedere la sua Risposta al Trauma.",
+  },
+  statPenaltyChoiceLabel: { en: "−10 to:", it: "−10 a:" },
+  statBonusChoiceLabel: { en: "+5 to:", it: "+5 a:" },
+  // Basic view — numbered steps
+  step1Title: { en: "Roll 2d10+25", it: "Tira 2d10+25" },
+  step2Title: { en: "Roll 2d10+10", it: "Tira 2d10+10" },
+  step3Title: { en: "Select Your Class", it: "Scegli la Tua Classe" },
+  step3Hint: {
+    en: "Tap a class to select it. Its stat/save bonuses are shown for reference — add them to your rolled Stats & Saves above yourself.",
+    it: "Tocca una classe per selezionarla. I bonus a Caratteristiche/Salvezze sono mostrati come riferimento — aggiungili tu stesso ai valori che hai tirato.",
+  },
+  step4Title: { en: "Roll 1d10+10 for Health — starts at Max and 0 Wounds", it: "Tira 1d10+10 per la Salute — parte al Massimo con 0 Ferite" },
+  step5Title: { en: "Stress — starts at 2", it: "Stress — parte da 2" },
+  step6Title: { en: "Take Note of Your Class's Trauma Response", it: "Annota la Risposta al Trauma della Tua Classe" },
+  step7Title: { en: "Note Class Skills and Choose Bonus Skills", it: "Annota le Abilità di Classe e Scegli le Abilità Bonus" },
+  step7Hint: {
+    en: "To take a Master or Expert skill you must first have at least one of its listed prerequisites. Tap a dot to take that skill at that tier; tap it again to clear it.",
+    it: "Per scegliere un'Abilità da Maestro o Esperta devi prima possedere almeno una delle sue Abilità prerequisito elencate. Tocca un pallino per scegliere quell'Abilità a quel livello; toccalo di nuovo per annullare.",
+  },
+  step8Title: { en: "Roll for Your Equipment Loadout, Trinket & Patch", it: "Tira per il Tuo Loadout, Trinket e Toppa" },
+  trainedTier: { en: "Trained (+10)", it: "Addestrate (+10)" },
+  expertTier: { en: "Expert (+15)", it: "Esperte (+15)" },
+  masterTier: { en: "Master (+20)", it: "Da Maestro (+20)" },
+  requires: { en: "requires", it: "richiede" },
+  or: { en: "or", it: "o" },
+  clickToClear: { en: "Click to clear", it: "Tocca per annullare" },
+  takeAs: { en: "Take as", it: "Prendi come" },
+};
 
 /* ---------- generic dom helper ---------- */
 function el(tag, attrs = {}, children = []) {
@@ -257,7 +381,7 @@ function openNotesEditor(character, save, locked) {
   closeNotesEditor();
   const overlay = el("div", { class: "confirm-overlay" });
   const box = el("div", { class: "confirm-box notes-box" });
-  box.appendChild(el("div", { class: "notes-box-title", text: "Personal Notes" }));
+  box.appendChild(el("div", { class: "notes-box-title", text: t("personalNotes") }));
   const area = el("textarea", {
     class: "field-textarea notes-box-textarea",
     disabled: locked || undefined,
@@ -295,7 +419,7 @@ function personalNotesLink(character, save) {
     class: "notes-link",
     onclick: () => openNotesEditor(character, save, locked),
   }, [
-    "Personal Notes",
+    t("personalNotes"),
     character.personalNotes ? el("span", { class: "notes-link-badge", text: "✓" }) : el("span", { class: "notes-link-arrow", text: "→" }),
   ]);
 }
@@ -328,6 +452,19 @@ function setSheetView(v) {
   localStorage.setItem(VIEW_KEY, v);
   renderApp();
 }
+
+let locale = localStorage.getItem(LOCALE_KEY) === "it" ? "it" : "en";
+function applyLocale() {
+  document.documentElement.setAttribute("data-locale", locale);
+  document.documentElement.setAttribute("lang", locale);
+}
+function setLocale(v) {
+  locale = v;
+  localStorage.setItem(LOCALE_KEY, v);
+  applyLocale();
+  renderApp();
+}
+applyLocale();
 
 let theme = (() => {
   const saved = localStorage.getItem(THEME_KEY);
@@ -622,6 +759,11 @@ function renderTopbar() {
     }),
   ]);
   controls.appendChild(viewToggle);
+  const localeToggle = el("div", { class: "view-toggle" }, [
+    el("button", { class: locale === "en" ? "active" : "", text: "EN", title: "English", onclick: () => setLocale("en") }),
+    el("button", { class: locale === "it" ? "active" : "", text: "IT", title: "Italiano", onclick: () => setLocale("it") }),
+  ]);
+  controls.appendChild(localeToggle);
   controls.appendChild(
     el("button", { class: "icon-btn", title: "Toggle dark mode", onclick: toggleTheme }, [themeIcon()])
   );
@@ -746,7 +888,7 @@ function statusPillField(labelText, current, second, onCurrent, onSecond, opts =
   pill.appendChild(el("input", { type: "text", inputmode: "numeric", value: second || "", disabled: locked || undefined, oninput: (e) => onSecond(e.target.value) }));
   block.appendChild(pill);
 
-  block.appendChild(el("div", { class: "pill-caption" }, [el("span", { text: "Current" }), el("span", { text: opts.secondLabel || "Max" })]));
+  block.appendChild(el("div", { class: "pill-caption" }, [el("span", { text: t("current") }), el("span", { text: opts.secondLabel || t("max") })]));
   return block;
 }
 
@@ -775,7 +917,7 @@ function renderLineList(character, save, key, opts) {
           title: "Remove",
           disabled: sheetLocked || undefined,
           onclick: () => {
-            showConfirmDialog(`Remove this ${opts.singular || "item"}?`, () => {
+            showConfirmDialog(opts.confirmText || `Remove this ${opts.singular || "item"}?`, () => {
               character[key] = character[key].filter((x) => x.id !== item.id);
               save();
               refreshTabContent();
@@ -793,7 +935,7 @@ function renderLineList(character, save, key, opts) {
     outer.appendChild(
       el("button", {
         class: "add-row-btn",
-        text: "+ Add " + (opts.singular || "item"),
+        text: "+ " + t("add") + " " + (opts.singular || t("itemSingular")),
         disabled: sheetLocked || undefined,
         onclick: () => {
           character[key].push({ id: uid(), text: "" });
@@ -811,7 +953,7 @@ function renderLineList(character, save, key, opts) {
 function lineListSectionHeader(title, onAdd) {
   return el("div", { class: "list-section-header" }, [
     el("span", { text: title }),
-    el("button", { type: "button", class: "list-add-btn", title: "Add " + title.toLowerCase(), disabled: sheetLocked || undefined, onclick: onAdd }, ["+"]),
+    el("button", { type: "button", class: "list-add-btn", title: t("add") + " " + title.toLowerCase(), disabled: sheetLocked || undefined, onclick: onAdd }, ["+"]),
   ]);
 }
 // A panel's own dark title bar, with the same "+" add control from lineListSectionHeader
@@ -821,7 +963,7 @@ function lineListSectionHeader(title, onAdd) {
 function panelHeaderWithAdd(title, onAdd) {
   return el("div", { class: "panel-header panel-header-with-add" }, [
     el("span", {}, [title]),
-    el("button", { type: "button", class: "list-add-btn", title: "Add " + title.toLowerCase(), disabled: sheetLocked || undefined, onclick: onAdd }, ["+"]),
+    el("button", { type: "button", class: "list-add-btn", title: t("add") + " " + title.toLowerCase(), disabled: sheetLocked || undefined, onclick: onAdd }, ["+"]),
   ]);
 }
 
@@ -829,22 +971,22 @@ function statusReportSection(character, save) {
   const wrap = el("div");
   wrap.appendChild(statusReportRow(character, save, ["health", "wounds", "stress"]));
   wrap.appendChild(
-    textAreaField("Conditions", character.conditions, (v) => { character.conditions = v; save(); }, { placeholder: "Injuries, afflictions, cybernetics…" })
+    textAreaField(t("conditions"), character.conditions, (v) => { character.conditions = v; save(); }, { placeholder: t("conditionsPlaceholder") })
   );
   return wrap;
 }
 
 function skillTrainingSection(character, save) {
   const wrap = el("div", { class: "panel" });
-  wrap.appendChild(el("div", { class: "panel-header", text: "Skill Training" }));
+  wrap.appendChild(el("div", { class: "panel-header", text: t("skillTraining") }));
   const body = el("div", { class: "panel-body" });
   const row = el("div", { class: "field-row" }, []);
   const grid = el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:10px;" });
   grid.appendChild(
-    textField("In Progress", character.skillTraining.inProgress, (v) => { character.skillTraining.inProgress = v; save(); })
+    textField(t("inProgress"), character.skillTraining.inProgress, (v) => { character.skillTraining.inProgress = v; save(); })
   );
   grid.appendChild(
-    textField("Time Remaining", character.skillTraining.timeRemaining, (v) => { character.skillTraining.timeRemaining = v; save(); })
+    textField(t("timeRemaining"), character.skillTraining.timeRemaining, (v) => { character.skillTraining.timeRemaining = v; save(); })
   );
   row.appendChild(grid);
   body.appendChild(row);
@@ -855,17 +997,17 @@ function skillTrainingSection(character, save) {
 function equipmentPanel(character, save) {
   const wrap = el("div", { class: "panel" });
   wrap.appendChild(
-    panelHeaderWithAdd("Equipment", () => {
+    panelHeaderWithAdd(t("equipment"), () => {
       character.equipment.push({ id: uid(), text: "" });
       save();
       refreshTabContent();
     })
   );
   const body = el("div", { class: "panel-body" });
-  body.appendChild(renderLineList(character, save, "equipment", { singular: "item", placeholder: "Equipment item…", hideAddButton: true }));
+  body.appendChild(renderLineList(character, save, "equipment", { singular: t("itemSingular"), placeholder: t("equipmentItemPlaceholder"), confirmText: t("removeEquipmentConfirm"), hideAddButton: true }));
   const row = el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;" });
-  row.appendChild(textField("Armor Points", character.armorPoints, (v) => { character.armorPoints = v; save(); }));
-  row.appendChild(textField("Credits", character.credits, (v) => { character.credits = v; save(); }));
+  row.appendChild(textField(t("armorPoints"), character.armorPoints, (v) => { character.armorPoints = v; save(); }));
+  row.appendChild(textField(t("credits"), character.credits, (v) => { character.credits = v; save(); }));
   body.appendChild(row);
   wrap.appendChild(body);
   return wrap;
@@ -873,14 +1015,14 @@ function equipmentPanel(character, save) {
 function weaponsPanel(character, save) {
   const wrap = el("div", { class: "panel" });
   wrap.appendChild(
-    panelHeaderWithAdd("Weapons", () => {
+    panelHeaderWithAdd(t("weapons"), () => {
       character.weapons.push({ id: uid(), text: "" });
       save();
       refreshTabContent();
     })
   );
   const body = el("div", { class: "panel-body" });
-  body.appendChild(renderLineList(character, save, "weapons", { singular: "weapon", placeholder: "Weapon…", hideAddButton: true }));
+  body.appendChild(renderLineList(character, save, "weapons", { singular: t("weaponSingular"), placeholder: t("weaponPlaceholder"), confirmText: t("removeWeaponConfirm"), hideAddButton: true }));
   wrap.appendChild(body);
   return wrap;
 }
@@ -890,37 +1032,37 @@ function weaponsPanel(character, save) {
    ========================================================================= */
 function personalDetailsPanelAdvanced(character, save) {
   const wrap = el("div", { class: "panel personal-details-panel" });
-  wrap.appendChild(el("div", { class: "panel-header", text: "Personal Details" }));
+  wrap.appendChild(el("div", { class: "panel-header", text: t("personalDetails") }));
   const body = el("div", { class: "panel-body" });
-  body.appendChild(textField("Character Name", character.name, (v) => { character.name = v; save(); }));
+  body.appendChild(textField(t("characterName"), character.name, (v) => { character.name = v; save(); }));
   const row2 = el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:12px;" });
-  row2.appendChild(textField("Pronouns", character.pronouns, (v) => { character.pronouns = v; save(); }));
-  row2.appendChild(textField("Player Name", character.playerName, (v) => { character.playerName = v; save(); }));
+  row2.appendChild(textField(t("pronouns"), character.pronouns, (v) => { character.pronouns = v; save(); }));
+  row2.appendChild(textField(t("playerName"), character.playerName, (v) => { character.playerName = v; save(); }));
   body.appendChild(row2);
   const row3 = el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:12px;" });
-  row3.appendChild(textField("Trinket", character.trinket, (v) => { character.trinket = v; save(); }));
-  row3.appendChild(textField("Patch", character.patch, (v) => { character.patch = v; save(); }));
+  row3.appendChild(textField(t("trinket"), character.trinket, (v) => { character.trinket = v; save(); }));
+  row3.appendChild(textField(t("patch"), character.patch, (v) => { character.patch = v; save(); }));
   body.appendChild(row3);
-  body.appendChild(textField("High Score", character.highScore, (v) => { character.highScore = v; save(); }));
+  body.appendChild(textField(t("highScore"), character.highScore, (v) => { character.highScore = v; save(); }));
   body.appendChild(personalNotesLink(character, save));
   wrap.appendChild(body);
   return wrap;
 }
 function classPanelAdvanced(character, save) {
   const wrap = el("div", { class: "panel" });
-  wrap.appendChild(el("div", { class: "panel-header", text: "Class" }));
+  wrap.appendChild(el("div", { class: "panel-header", text: t("class") }));
   const body = el("div", { class: "panel-body" });
   body.appendChild(classSelect(character, save));
   const cls = character.class ? CLASSES[character.class] : null;
   body.appendChild(
-    el("div", { class: "trauma-box", style: "margin-top:10px;", text: cls ? cls.trauma : "Select a class above to see its Trauma Response." })
+    el("div", { class: "trauma-box", style: "margin-top:10px;", text: cls ? L(cls.trauma) : t("selectClassToSeeTrauma") })
   );
   wrap.appendChild(body);
   return wrap;
 }
 function classSelect(character, save) {
   const wrap = el("div", { class: "field-row" });
-  wrap.appendChild(el("label", { class: "field-label", text: "Class" }));
+  wrap.appendChild(el("label", { class: "field-label", text: t("class") }));
   const select = el(
     "select",
     {
@@ -933,8 +1075,8 @@ function classSelect(character, save) {
       },
     },
     [
-      el("option", { value: "", text: "— none —", selected: !character.class ? "selected" : undefined }),
-      ...CLASS_ORDER.map((k) => el("option", { value: k, text: CLASSES[k].label, selected: character.class === k ? "selected" : undefined })),
+      el("option", { value: "", text: t("selectClassNoneOption"), selected: !character.class ? "selected" : undefined }),
+      ...CLASS_ORDER.map((k) => el("option", { value: k, text: L(CLASSES[k].label), selected: character.class === k ? "selected" : undefined })),
     ]
   );
   wrap.appendChild(select);
@@ -942,20 +1084,20 @@ function classSelect(character, save) {
 }
 function skillListAdvanced(character, save) {
   const wrap = el("div", { class: "panel" });
-  wrap.appendChild(el("div", { class: "panel-header", text: "Skills" }));
+  wrap.appendChild(el("div", { class: "panel-header", text: t("skills") }));
   const body = el("div", { class: "panel-body" });
   if (character.skills.length === 0) {
-    body.appendChild(el("div", { class: "skill-list-empty", text: "No skills chosen yet — switch to the Basic view to pick skills from the tree." }));
+    body.appendChild(el("div", { class: "skill-list-empty", text: t("noSkillsChosen") }));
   } else {
     const list = el("div", { class: "skill-list" });
     [...character.skills]
-      .sort((a, b) => (SKILLS[a.id]?.label || "").localeCompare(SKILLS[b.id]?.label || ""))
+      .sort((a, b) => L(SKILLS[a.id]?.label).localeCompare(L(SKILLS[b.id]?.label)))
       .forEach((s) => {
         const skill = SKILLS[s.id];
         if (!skill) return;
         const row = el("div", { class: "skill-list-row" });
-        row.appendChild(el("span", { class: "skill-list-name", text: skill.label }));
-        row.appendChild(el("span", { class: "skill-list-tier", text: `${s.tier} (+${SKILL_TIER_BONUS[s.tier]})` }));
+        row.appendChild(el("span", { class: "skill-list-name", text: L(skill.label) }));
+        row.appendChild(el("span", { class: "skill-list-tier", text: `${L(TIER_LABELS[s.tier])} (+${SKILL_TIER_BONUS[s.tier]})` }));
         list.appendChild(row);
       });
     body.appendChild(list);
@@ -966,23 +1108,23 @@ function skillListAdvanced(character, save) {
 }
 function skillTrainingBlock(character, save) {
   const wrap = el("div", { class: "panel-body tight", style: "margin-top:10px;border-top:2px solid var(--muted-border);" });
-  wrap.appendChild(el("div", { class: "field-label", text: "Skill Training" }));
+  wrap.appendChild(el("div", { class: "field-label", text: t("skillTraining") }));
   const grid = el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:10px;" });
-  grid.appendChild(textField("In Progress", character.skillTraining.inProgress, (v) => { character.skillTraining.inProgress = v; save(); }));
-  grid.appendChild(textField("Time Remaining", character.skillTraining.timeRemaining, (v) => { character.skillTraining.timeRemaining = v; save(); }));
+  grid.appendChild(textField(t("inProgress"), character.skillTraining.inProgress, (v) => { character.skillTraining.inProgress = v; save(); }));
+  grid.appendChild(textField(t("timeRemaining"), character.skillTraining.timeRemaining, (v) => { character.skillTraining.timeRemaining = v; save(); }));
   wrap.appendChild(grid);
   return wrap;
 }
 
 function statsPanelAdvanced(character, save) {
   const wrap = el("div", { class: "panel" });
-  wrap.appendChild(el("div", { class: "panel-header", text: "Stats" }));
+  wrap.appendChild(el("div", { class: "panel-header", text: t("stats") }));
   wrap.appendChild(el("div", { class: "panel-body" }, [statsAndSavesSectionStatsOnly(character, save)]));
   return wrap;
 }
 function savesPanelAdvanced(character, save) {
   const wrap = el("div", { class: "panel" });
-  wrap.appendChild(el("div", { class: "panel-header", text: "Saves" }));
+  wrap.appendChild(el("div", { class: "panel-header", text: t("saves") }));
   wrap.appendChild(el("div", { class: "panel-body" }, [statsAndSavesSectionSavesOnly(character, save)]));
   return wrap;
 }
@@ -1001,7 +1143,7 @@ function renderCharacterSheetAdvanced(character, save) {
   col2.appendChild(statsPanelAdvanced(character, save));
   col2.appendChild(savesPanelAdvanced(character, save));
   const statusPanel = el("div", { class: "panel" });
-  statusPanel.appendChild(el("div", { class: "panel-header", text: "Status Report" }));
+  statusPanel.appendChild(el("div", { class: "panel-header", text: t("statusReport") }));
   statusPanel.appendChild(el("div", { class: "panel-body" }, [statusReportSection(character, save)]));
   col2.appendChild(statusPanel);
 
@@ -1040,23 +1182,24 @@ function classCard(character, save, key) {
       refreshTabContent();
     },
   });
-  card.appendChild(el("div", { class: "class-name", text: cls.label }));
+  card.appendChild(el("div", { class: "class-name", text: L(cls.label) }));
   const ul = el("ul");
-  ul.appendChild(el("li", { text: cls.statBonusText }));
-  ul.appendChild(el("li", { text: cls.saveBonusText }));
-  if (cls.woundsBonusText) ul.appendChild(el("li", { text: cls.woundsBonusText }));
+  ul.appendChild(el("li", { text: L(cls.statBonusText) }));
+  ul.appendChild(el("li", { text: L(cls.saveBonusText) }));
+  const woundsText = L(cls.woundsBonusText);
+  if (woundsText) ul.appendChild(el("li", { text: woundsText }));
   card.appendChild(ul);
   if (selected && (cls.statPenaltyChoice || cls.statBonusChoice)) {
     const choiceRow = el("div", { class: "stat-choice-row" });
     choiceRow.addEventListener("click", (e) => e.stopPropagation());
-    choiceRow.appendChild(el("span", { text: cls.statPenaltyChoice ? "−10 to:" : "+5 to:" }));
+    choiceRow.appendChild(el("span", { text: cls.statPenaltyChoice ? t("statPenaltyChoiceLabel") : t("statBonusChoiceLabel") }));
     const select = el(
       "select",
       {
         disabled: sheetLocked || undefined,
         onchange: (e) => { character.classStatChoice = e.target.value; save(); },
       },
-      STAT_KEYS.map((k) => el("option", { value: k, text: STAT_LABELS[k], selected: character.classStatChoice === k ? "selected" : undefined }))
+      STAT_KEYS.map((k) => el("option", { value: k, text: L(STAT_LABELS[k]), selected: character.classStatChoice === k ? "selected" : undefined }))
     );
     choiceRow.appendChild(select);
     card.appendChild(choiceRow);
@@ -1066,15 +1209,15 @@ function classCard(character, save, key) {
 function classStepPanel(character, save) {
   const grid = el("div", { class: "class-grid" });
   CLASS_ORDER.forEach((key) => grid.appendChild(classCard(character, save, key)));
-  return stepPanel(3, "Select Your Class", [
-    el("div", { class: "hint", text: "Tap a class to select it. Its stat/save bonuses are shown for reference — add them to your rolled Stats & Saves above yourself." }),
+  return stepPanel(3, t("step3Title"), [
+    el("div", { class: "hint", text: t("step3Hint") }),
     grid,
   ]);
 }
 function traumaStepPanel(character) {
   const cls = character.class ? CLASSES[character.class] : null;
-  return stepPanel(6, "Take Note of Your Class's Trauma Response", [
-    el("div", { class: "trauma-box", text: cls ? cls.trauma : "Select a class above to see its Trauma Response." }),
+  return stepPanel(6, t("step6Title"), [
+    el("div", { class: "trauma-box", text: cls ? L(cls.trauma) : t("selectClassToSeeTrauma") }),
   ]);
 }
 
@@ -1088,14 +1231,14 @@ function skillTreeNode(character, save, skillId) {
     class: "skill-node-btn" + (active ? " " + skill.tier : ""),
     "data-skill-id": skillId,
     disabled: sheetLocked || (skill.tier !== "trained" && !met) ? "disabled" : undefined,
-    title: active ? "Click to clear" : `Take as ${skill.tier}`,
+    title: active ? t("clickToClear") : `${t("takeAs")} ${L(TIER_LABELS[skill.tier])}`,
     onclick: () => toggleCharacterSkill(character, save, skillId, skill.tier),
   });
   row.appendChild(btn);
-  const labelWrap = el("div", { class: "skill-node-label" }, [skill.label]);
+  const labelWrap = el("div", { class: "skill-node-label" }, [L(skill.label)]);
   if (skill.prereqs.length) {
     labelWrap.appendChild(
-      el("span", { class: "skill-prereq-hint", text: "requires: " + skill.prereqs.map((p) => SKILLS[p].label).join(" or ") })
+      el("span", { class: "skill-prereq-hint", text: t("requires") + ": " + skill.prereqs.map((p) => L(SKILLS[p].label)).join(" " + t("or") + " ") })
     );
   }
   row.appendChild(labelWrap);
@@ -1122,9 +1265,9 @@ function classSkillsRow() {
   CLASS_ORDER.forEach((key) => {
     const cls = CLASSES[key];
     const cell = el("div", { class: "class-skills-cell" });
-    cell.appendChild(el("div", { class: "class-name", text: cls.label }));
-    cell.appendChild(el("div", { class: "class-skills-text", text: cls.startingSkillsText }));
-    cell.appendChild(el("div", { class: "class-bonus-skill", text: cls.bonusSkillText }));
+    cell.appendChild(el("div", { class: "class-name", text: L(cls.label) }));
+    cell.appendChild(el("div", { class: "class-skills-text", text: L(cls.startingSkillsText) }));
+    cell.appendChild(el("div", { class: "class-bonus-skill", text: L(cls.bonusSkillText) }));
     grid.appendChild(cell);
   });
   return grid;
@@ -1132,12 +1275,12 @@ function classSkillsRow() {
 function skillTreeStepPanel(character, save) {
   const treeWrap = el("div", { class: "skill-tree-wrap" });
   const cols = el("div", { class: "skill-tree-cols" });
-  cols.appendChild(skillTreeColumn(character, save, "trained", "Trained (+10)"));
-  cols.appendChild(skillTreeColumn(character, save, "expert", "Expert (+15)"));
-  cols.appendChild(skillTreeColumn(character, save, "master", "Master (+20)"));
+  cols.appendChild(skillTreeColumn(character, save, "trained", t("trainedTier")));
+  cols.appendChild(skillTreeColumn(character, save, "expert", t("expertTier")));
+  cols.appendChild(skillTreeColumn(character, save, "master", t("masterTier")));
   treeWrap.appendChild(cols);
-  return stepPanel(7, "Note Class Skills and Choose Bonus Skills", [
-    el("div", { class: "hint", text: "To take a Master or Expert skill you must first have at least one of its listed prerequisites. Tap a dot to take that skill at that tier; tap it again to clear it." }),
+  return stepPanel(7, t("step7Title"), [
+    el("div", { class: "hint", text: t("step7Hint") }),
     classSkillsRow(),
     treeWrap,
   ]);
@@ -1148,26 +1291,26 @@ function skillTreeStepPanel(character, save) {
 // Equipment/Weapons, so nothing entered here needs a separate "loadout" record to stay
 // in sync; the two views are just two renderings of the same data.
 function equipmentStepPanel(character, save) {
-  return stepPanel(8, "Roll for Your Equipment Loadout, Trinket & Patch", [
-    lineListSectionHeader("Equipment", () => {
+  return stepPanel(8, t("step8Title"), [
+    lineListSectionHeader(t("equipment"), () => {
       character.equipment.push({ id: uid(), text: "" });
       save();
       refreshTabContent();
     }),
-    renderLineList(character, save, "equipment", { singular: "item", placeholder: "Equipment item…", hideAddButton: true }),
-    lineListSectionHeader("Weapons", () => {
+    renderLineList(character, save, "equipment", { singular: t("itemSingular"), placeholder: t("equipmentItemPlaceholder"), confirmText: t("removeEquipmentConfirm"), hideAddButton: true }),
+    lineListSectionHeader(t("weapons"), () => {
       character.weapons.push({ id: uid(), text: "" });
       save();
       refreshTabContent();
     }),
-    renderLineList(character, save, "weapons", { singular: "weapon", placeholder: "Weapon…", hideAddButton: true }),
+    renderLineList(character, save, "weapons", { singular: t("weaponSingular"), placeholder: t("weaponPlaceholder"), confirmText: t("removeWeaponConfirm"), hideAddButton: true }),
     el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;" }, [
-      textField("Trinket", character.trinket, (v) => { character.trinket = v; save(); }),
-      textField("Patch", character.patch, (v) => { character.patch = v; save(); }),
+      textField(t("trinket"), character.trinket, (v) => { character.trinket = v; save(); }),
+      textField(t("patch"), character.patch, (v) => { character.patch = v; save(); }),
     ]),
     el("div", { style: "display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;" }, [
-      textField("Armor Points", character.armorPoints, (v) => { character.armorPoints = v; save(); }),
-      textField("Credits (2d10×10)", character.credits, (v) => { character.credits = v; save(); }),
+      textField(t("armorPoints"), character.armorPoints, (v) => { character.armorPoints = v; save(); }),
+      textField(t("creditsDice"), character.credits, (v) => { character.credits = v; save(); }),
     ]),
   ]);
 }
@@ -1181,11 +1324,11 @@ function renderCharacterSheetBasic(character, save) {
   const left = el("div", { class: "stack" });
 
   const header = el("div", { class: "panel" });
-  header.appendChild(el("div", { class: "panel-header", text: "Personal Details" }));
+  header.appendChild(el("div", { class: "panel-header", text: t("personalDetails") }));
   const headerBody = el("div", { class: "dark-block panel-body" });
-  headerBody.appendChild(textField("Character Name", character.name, (v) => { character.name = v; save(); }));
-  headerBody.appendChild(textField("Pronouns", character.pronouns, (v) => { character.pronouns = v; save(); }));
-  headerBody.appendChild(textField("Player Name", character.playerName, (v) => { character.playerName = v; save(); }));
+  headerBody.appendChild(textField(t("characterName"), character.name, (v) => { character.name = v; save(); }));
+  headerBody.appendChild(textField(t("pronouns"), character.pronouns, (v) => { character.pronouns = v; save(); }));
+  headerBody.appendChild(textField(t("playerName"), character.playerName, (v) => { character.playerName = v; save(); }));
   headerBody.appendChild(personalNotesLink(character, save));
   header.appendChild(headerBody);
 
@@ -1195,8 +1338,8 @@ function renderCharacterSheetBasic(character, save) {
   const identityAndStats = el("div", { class: "identity-stats-row" });
   identityAndStats.appendChild(header);
   const statsStack = el("div", { class: "stack" });
-  statsStack.appendChild(stepPanel(1, "Roll 2d10+25", [statsAndSavesSectionStatsOnly(character, save, { compact: true })]));
-  statsStack.appendChild(stepPanel(2, "Roll 2d10+10", [statsAndSavesSectionSavesOnly(character, save, { compact: true })]));
+  statsStack.appendChild(stepPanel(1, t("step1Title"), [statsAndSavesSectionStatsOnly(character, save, { compact: true })]));
+  statsStack.appendChild(stepPanel(2, t("step2Title"), [statsAndSavesSectionSavesOnly(character, save, { compact: true })]));
   identityAndStats.appendChild(statsStack);
   left.appendChild(identityAndStats);
 
@@ -1206,11 +1349,11 @@ function renderCharacterSheetBasic(character, save) {
   // sheet's row — Health/Wounds gets more room since it holds two pills to Stress's one.
   const healthStressRow = el("div", { class: "health-stress-row" });
   healthStressRow.appendChild(
-    stepPanel(4, "Roll 1d10+10 for Health — starts at Max and 0 Wounds", [
+    stepPanel(4, t("step4Title"), [
       statusReportRow(character, save, ["health", "wounds"]),
     ])
   );
-  healthStressRow.appendChild(stepPanel(5, "Stress — starts at 2", [statusReportRow(character, save, ["stress"])]));
+  healthStressRow.appendChild(stepPanel(5, t("step5Title"), [statusReportRow(character, save, ["stress"])]));
   left.appendChild(healthStressRow);
 
   left.appendChild(traumaStepPanel(character));
@@ -1222,7 +1365,7 @@ function renderCharacterSheetBasic(character, save) {
   right.appendChild(equipmentStepPanel(character, save));
 
   const conditionsPanel = el("div", { class: "panel" });
-  conditionsPanel.appendChild(el("div", { class: "panel-header", text: "Conditions" }));
+  conditionsPanel.appendChild(el("div", { class: "panel-header", text: t("conditions") }));
   conditionsPanel.appendChild(
     el("div", { class: "panel-body" }, [
       textAreaField(null, character.conditions, (v) => { character.conditions = v; save(); }),
@@ -1239,22 +1382,22 @@ function renderCharacterSheetBasic(character, save) {
 }
 function statsAndSavesSectionStatsOnly(character, save, opts = {}) {
   const row = el("div", { class: "circle-row" + (opts.compact ? " compact" : "") });
-  STAT_KEYS.forEach((k) => row.appendChild(numberCircle(STAT_LABELS[k], character.stats[k], (v) => { character.stats[k] = v; save(); }, opts)));
+  STAT_KEYS.forEach((k) => row.appendChild(numberCircle(L(STAT_LABELS[k]), character.stats[k], (v) => { character.stats[k] = v; save(); }, opts)));
   return row;
 }
 function statsAndSavesSectionSavesOnly(character, save, opts = {}) {
   const row = el("div", { class: "circle-row" + (opts.compact ? " compact" : "") });
-  SAVE_KEYS.forEach((k) => row.appendChild(numberCircle(SAVE_LABELS[k], character.saves[k], (v) => { character.saves[k] = v; save(); }, opts)));
+  SAVE_KEYS.forEach((k) => row.appendChild(numberCircle(L(SAVE_LABELS[k]), character.saves[k], (v) => { character.saves[k] = v; save(); }, opts)));
   return row;
 }
 function statusReportRow(character, save, keys) {
   const row = el("div", { class: "pill-row" });
-  const labels = { health: "Health", wounds: "Wounds", stress: "Stress" };
+  const labels = { health: "health", wounds: "wounds", stress: "stress" };
   keys.forEach((key) => {
-    const secondLabel = key === "stress" ? "Min" : "Max";
+    const secondLabel = key === "stress" ? t("min") : t("max");
     row.appendChild(
       statusPillField(
-        labels[key],
+        t(labels[key]),
         character[key].current,
         key === "stress" ? character[key].min : character[key].max,
         (v) => { character[key].current = v; save(); },
