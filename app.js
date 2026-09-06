@@ -666,6 +666,69 @@ function toggleCharacterSkill(character, save, skillId, tier) {
   refreshTabContent();
 }
 
+/* Skill-tree connector lines (Basic view) — the source PDF draws a plain line from
+   each prerequisite's bullet circle to the skill it unlocks; SKILLS/prereqs already
+   carries that graph (see the note at the top of the file), so once the tree is on
+   screen we measure the actual rendered bullet positions and draw an SVG line for
+   each prereq edge into the .skill-tree-svg overlay already reserved for this in
+   style.css. Positions can only be measured post-layout, so this runs deferred (via
+   rAF) after every render pass rather than while the DOM is still being built. */
+function svgTag(tag, attrs = {}) {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+  return node;
+}
+function drawSkillTreeConnectors() {
+  document.querySelectorAll(".skill-tree-cols").forEach((cols) => {
+    const svg = cols.querySelector(".skill-tree-svg");
+    if (!svg) return;
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    const base = cols.getBoundingClientRect();
+    const nodes = {};
+    cols.querySelectorAll("[data-skill-id]").forEach((btn) => {
+      const r = btn.getBoundingClientRect();
+      nodes[btn.dataset.skillId] = {
+        x: r.left + r.width / 2 - base.left,
+        y: r.top + r.height / 2 - base.top,
+        r: r.width / 2,
+        taken: btn.classList.contains("trained") || btn.classList.contains("expert") || btn.classList.contains("master"),
+      };
+    });
+    Object.keys(SKILLS).forEach((id) => {
+      const skill = SKILLS[id];
+      const to = nodes[id];
+      if (!to || !skill.prereqs.length) return;
+      skill.prereqs.forEach((prereqId) => {
+        const from = nodes[prereqId];
+        if (!from) return;
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        const ux = dx / dist;
+        const uy = dy / dist;
+        // stop each end at the circle's own edge, not its center, so the line never
+        // paints over (and doesn't need to duck behind) the bullet button itself
+        const x1 = from.x + ux * from.r;
+        const y1 = from.y + uy * from.r;
+        const x2 = to.x - ux * to.r;
+        const y2 = to.y - uy * to.r;
+        const path = svgTag("path", { d: `M ${x1.toFixed(1)} ${y1.toFixed(1)} L ${x2.toFixed(1)} ${y2.toFixed(1)}` });
+        if (from.taken && to.taken) path.setAttribute("class", "active");
+        svg.appendChild(path);
+      });
+    });
+  });
+}
+let skillTreeConnectorsRaf = null;
+function scheduleSkillTreeConnectors() {
+  if (skillTreeConnectorsRaf) cancelAnimationFrame(skillTreeConnectorsRaf);
+  skillTreeConnectorsRaf = requestAnimationFrame(() => {
+    skillTreeConnectorsRaf = null;
+    drawSkillTreeConnectors();
+  });
+}
+window.addEventListener("resize", scheduleSkillTreeConnectors);
+
 /* =========================================================================
    Top-level render
    ========================================================================= */
@@ -685,12 +748,14 @@ function renderApp() {
   content.appendChild(renderActiveTab());
   app.appendChild(content);
   app.appendChild(el("div", { class: "credits-footer", text: "Mothership® is a trademark of Tuesday Knight Games. Unofficial fan-made tool." }));
+  scheduleSkillTreeConnectors();
 }
 function refreshTabContent() {
   const content = document.getElementById("tab-content");
   if (!content) return renderApp();
   content.innerHTML = "";
   content.appendChild(renderActiveTab());
+  scheduleSkillTreeConnectors();
 }
 function renderActiveTab() {
   if (activeTab === "roster" && isGM()) return renderRosterTab();
@@ -1275,6 +1340,7 @@ function classSkillsRow() {
 function skillTreeStepPanel(character, save) {
   const treeWrap = el("div", { class: "skill-tree-wrap" });
   const cols = el("div", { class: "skill-tree-cols" });
+  cols.appendChild(svgTag("svg", { class: "skill-tree-svg" }));
   cols.appendChild(skillTreeColumn(character, save, "trained", t("trainedTier")));
   cols.appendChild(skillTreeColumn(character, save, "expert", t("expertTier")));
   cols.appendChild(skillTreeColumn(character, save, "master", t("masterTier")));
