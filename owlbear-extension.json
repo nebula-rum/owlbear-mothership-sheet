@@ -2,7 +2,7 @@
   "name": "Mothership — Character Profile",
   "version": "1.0.0",
   "manifest_version": 1,
-  "description": "Character Profile and Ship Manifest sheets for the Mothership RPG, with a GM roster, Basic/Advanced character views, and English/Italian.",
+  "description": "A Character Profile sheet for the Mothership RPG, with a GM roster and Basic/Advanced views.",
   "icon": "/owlbear-mothership-sheet/icon.svg",
   "author": "nebularum",
   "action": {
