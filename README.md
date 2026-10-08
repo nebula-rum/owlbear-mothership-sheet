@@ -69,6 +69,8 @@ outside Owlbear first — it falls back to local-only storage automatically in t
   repos serve under a `/<repo>/` subpath, not the domain root. **If you rename or fork
   under a different repo name**, edit those paths to match your actual repo name, commit,
   then reinstall the extension.
+- Owlbear rejects the whole manifest ("Unable to load extension") if its `description` is
+  longer than 128 characters — check the length before changing it.
 - Don't rename the manifest file to `manifest.json` if you ever deploy via Netlify Drop —
   it 401s there. `owlbear-extension.json` is fine as-is.
 
