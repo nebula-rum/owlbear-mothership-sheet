@@ -13,8 +13,15 @@ views, a GM-managed Roster, and a dark mode — no build step, nothing to instal
   full 3-tier skill tree (Trained/Expert/Master) with prerequisite enforcement, and
   equipment loadout.
 - Both views show the **same character** — switch anytime, per-viewer, with nothing lost.
-- A GM-only **Roster** tab: create characters, assign each to a specific player /
-  everyone / GM-only, and edit any character's full sheet directly.
+- A **Ship Manifest** sheet laid out like the official one: transponder/identity, ship
+  stats (Thrusters/Battle/Systems), fuel, warp cores, cryopods & escape pods, weapons /
+  megadamage / hardpoints, crew, the nine Megadamage effects with hull points, a
+  graph-paper deckplan, and upgrades / cargo / minor & major repairs.
+- A GM-only **Roster** tab: create characters and ships, assign each to a specific
+  player / everyone / GM-only (for a ship, that player is the captain), and edit any
+  sheet directly.
+- **English and Italian** (per-viewer EN/IT toggle) for the character sheet and the ship
+  manifest.
 - **Dark mode**, per viewer, independent of the Basic/Advanced choice.
 
 ## Install
@@ -32,6 +39,9 @@ adding it once.
 - **Roster** tab: add/rename characters, set each one's access (GM only / Everyone / a
   specific player), expand any character to edit its sheet directly — the same Basic or
   Advanced editor a player would see.
+- **Ships** work the same way: **+ Add Ship** in the Roster, then assign it to everyone or
+  to one player (the captain). Whoever can see a ship gets a **Ship** tab next to
+  **Character**; the lock icon makes it read-only for players, exactly like a character.
 - The 4 core classes (Marine, Android, Scientist, Teamster) and the full skill tree are
   built in. Stat/save class bonuses are shown as reference text on the Basic view's class
   cards — add them to your rolled numbers yourself, same as on the physical sheet.

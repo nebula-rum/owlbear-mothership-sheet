@@ -111,3 +111,53 @@ second value read "Max" instead of the rule-accurate "Minimum" — fixed in
 `statusPillField`/`statusReportRow` and re-verified via screenshot.
 
 `node --check app.js` run after every edit, per the guide's §10.
+
+## Ship Manifest
+
+Added from the "Ship Manifest" page at the end of the Shipbreaker's Toolkit (a one-page
+landscape PDF). Decisions worth knowing before changing it:
+
+- **Ships live in the same roster as characters**, told apart by a `kind` field on each
+  roster entry (`"character"` | `"ship"`; entries saved before ships existed have none and
+  read as characters). Access is therefore the identical 3-way model — GM only / Everyone /
+  one assigned player (the "captain") — plus the same per-entry lock, with no second
+  permission system. Ship records are `com.mothership.sheet/ship/<id>`.
+- **A separate Ship tab, not a mixed picker.** Players who can see a ship get a Ship tab
+  beside Character; the tab only exists while they can see at least one ship, and a player
+  whose only assignment is a ship lands on it at startup. The Basic/Advanced toggle is hidden
+  there — the manifest has one layout. Changing a ship's access re-renders the whole app
+  (not just the tab content) because the topbar's Ship tab depends on it.
+- **Layout follows the PDF's panel arrangement** with a 6-track grid (`.ship-sheet`): the
+  PDF's Cryopods/Weapons panels and its Deckplan/Cargo panels don't share a vertical edge, so
+  two narrow middle-right tracks are needed. Panels are titled *in their own border* like the
+  PDF (not the character sheet's dark header bars), which only works because `.ship-sheet`
+  paints its own `--bg` surface — the title's background has to match what's behind the
+  border, and the Roster editor's backdrop is a different color. Stacks to 2 columns under
+  1000px and 1 column under 560px; the three connecting arrows (Transponder → Stats & Saves,
+  Thrusters → Fuel, Battle → Weapons) are pure CSS and only exist in the full layout.
+  The Thrusters → Fuel arrow only lines up because the Stats & Saves title is reserved two
+  lines tall in both languages and the Fuel panel's top padding is tuned to match.
+- **Ruled-line lists** (crew, weapons, upgrades, cargo, minor/major repairs) are arrays of
+  plain strings with the printed sheet's line count as a floor and a small "+" for more —
+  not the `{id, text}` add/remove lists the character sheet uses — since the PDF's lines are
+  just writing space.
+- **Deckplan** is a monospace textarea over a CSS graph-paper background (so ASCII layouts
+  line up on the grid), not a drawing canvas. An image-URL field would be the natural next
+  step if hand-drawn plans are wanted.
+- **Megadamage effects** are static reference text ({en, it}) in `SHIP_MEGADAMAGE`; the
+  bullet beside each is an independent on/off marker, nothing is computed from them.
+  Sample values printed in the PDF's form fields (12, 32, 23, 1, "Here's a list of all the
+  crew…") were treated as demo data and not copied.
+- **Italian is a first draft** — the ship terms (Propulsori, Battaglia, Sistemi, Carburante,
+  Nuclei Warp, Criocapsule, Megadanno, Punti di Aggancio, Punti Scafo, Pianta dei Ponti,
+  Potenziamenti, …) were not in the reviewed glossary and need the same review the character
+  sheet got. Topbar/roster chrome (including the new Ship tab and "+ Add Ship") stays
+  English, like the existing Character/Roster tabs.
+- `statusPillField` gained `firstLabel` (Base/Installed instead of Current), `single` (the
+  one-value Hull Points pill) and an optional label, so the ship reuses the character
+  sheet's pills instead of a second pill component.
+
+Verified in standalone mode and against a stubbed OBR SDK (player role, assigned/everyone/
+GM-only visibility, lock disabling every control for players but not the GM, a pre-ships
+roster entry still reading as a character), in EN/IT and light/dark, in the Ship tab and the
+Roster editor, and at 1180/900/480px wide.

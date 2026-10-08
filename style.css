@@ -680,3 +680,299 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   margin-right: 6px;
   flex: none;
 }
+
+/* ---------- ship manifest ----------
+   Mirrors the printed sheet's arrangement: identity + megadamage list down the left,
+   Stats & Saves / Fuel / Weapons across the middle, Crew on the right, Deckplan and the
+   Upgrades/Cargo/Repairs panel along the bottom. The six columns are the PDF's own
+   proportions (its Cryopods/Weapons panels and its Deckplan/Cargo panels don't share an
+   edge, hence the two narrow middle-right tracks). Stacks into 2 columns, then 1, when
+   there isn't room — the connecting arrows only exist in the full layout. */
+.ship-sheet {
+  --gap: 16px;
+  --pad: 14px;
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: minmax(0, 4.3fr) minmax(0, 2.8fr) minmax(0, 3.85fr) minmax(0, 1.35fr) minmax(0, 1.65fr) minmax(0, 4.3fr);
+  grid-template-areas:
+    "id   stats fuel pods  pods  crew"
+    "id   stats weap weap  weap  crew"
+    "mega o2    weap weap  weap  crew"
+    "mega deck  deck deck  cargo cargo";
+  background: var(--bg);
+  padding: 14px 14px 42px;
+  border-radius: 16px;
+}
+.ship-id { grid-area: id; }
+.ship-stats { grid-area: stats; }
+.ship-fuel { grid-area: fuel; }
+.ship-pods { grid-area: pods; }
+.ship-weapons { grid-area: weap; }
+.ship-crew { grid-area: crew; }
+.ship-o2 { grid-area: o2; }
+.ship-megadamage { grid-area: mega; }
+.ship-deckplan { grid-area: deck; }
+.ship-cargo { grid-area: cargo; }
+
+.ship-panel {
+  position: relative;
+  border: 3px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg);
+  padding: 24px var(--pad) var(--pad);
+  min-width: 0;
+}
+/* A title sitting in the panel's own border: the title's background matches the sheet's,
+   so it cuts the border line behind it. */
+.ship-panel-titles {
+  position: absolute;
+  top: -13px; left: 0; right: 0;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.ship-panel-titles.multi { display: grid; left: var(--pad); right: var(--pad); justify-items: center; }
+.ship-panel-titles.bottom { top: auto; bottom: -13px; }
+.ship-panel-title {
+  background: var(--bg);
+  padding: 0 8px;
+  line-height: 22px;
+  font-family: "Poppins", system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ship-grey {
+  background: var(--muted-fill);
+  border-radius: 14px;
+  padding: 12px;
+  min-width: 0;
+}
+.ship-grey-title {
+  text-align: center;
+  font-family: "Poppins", system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.2;
+  margin-bottom: 10px;
+  /* two lines tall in either language, so the circles below sit at the same height (and the
+     Thrusters → Fuel arrow keeps hitting the Fuel pill) whether the title wraps or not */
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+[data-locale="it"] .ship-grey-title { font-size: 10px; letter-spacing: 0; }
+.ship-grey .stat-label { font-size: 10px; letter-spacing: 0.02em; max-width: 84px; line-height: 1.15; }
+.ship-grey .stat-circle { width: 52px; height: 52px; }
+.ship-grey .stat-circle input { font-size: 17px; }
+.ship-stats { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.ship-stat-row { position: relative; width: 100%; display: flex; justify-content: center; }
+.ship-fuel { display: flex; align-items: center; justify-content: space-around; gap: 10px; padding-top: 50px; }
+.ship-pods { display: flex; align-items: center; justify-content: space-around; gap: 8px; }
+.ship-o2 { display: flex; align-items: center; justify-content: center; }
+
+/* the connecting arrows — Transponder → Stats & Saves, Thrusters → Fuel, Battle → Weapons */
+.ship-arrow { display: none; position: absolute; z-index: 2; height: 2px; background: var(--border); pointer-events: none; }
+.ship-arrow::after {
+  content: "";
+  position: absolute;
+  right: -1px; top: 50%;
+  transform: translateY(-50%);
+  border-left: 8px solid var(--border);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+}
+@media (min-width: 1000px) {
+  .ship-arrow { display: block; }
+  .ship-arrow.to-fuel { top: 25px; left: calc(50% + 38px); right: calc(-1 * (12px + var(--gap) + 12px)); }
+  .ship-arrow.to-weapons { top: 25px; left: calc(50% + 38px); right: calc(-1 * (12px + var(--gap) - 2px)); }
+  .ship-arrow.to-stats { top: 62%; left: 100%; width: calc(var(--gap) + 10px); }
+}
+
+.ship-id { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.ship-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 3px solid var(--border);
+  border-radius: 14px;
+  padding: 8px 12px;
+  background: var(--bg);
+}
+.ship-logo svg { width: 34px; height: 34px; stroke: var(--ink); flex: none; }
+.ship-logo-text {
+  display: flex;
+  flex-direction: column;
+  font-family: "Poppins", system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 14px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+.ship-transponder { position: relative; flex: 1; border-radius: 16px; padding: 12px 14px 14px; }
+.ship-transponder .field-textarea-tall { min-height: 110px; }
+.ship-transponder-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: "Poppins", system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.transponder-toggle { display: flex; gap: 10px; }
+.transponder-dot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--bg);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.transponder-dot-circle { width: 16px; height: 16px; border-radius: 50%; border: 2.5px solid var(--bg); }
+.transponder-dot.active .transponder-dot-circle { background: var(--bg); }
+
+.ship-triple { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); justify-items: center; margin-bottom: 8px; }
+.ship-weapons .ruled-lines, .ship-crew .ruled-lines { margin-top: 6px; }
+.ship-crew { display: flex; flex-direction: column; }
+.ship-crew .pill-block { align-self: center; }
+.status-pill.single input { width: 96px; }
+
+.ruled-lines { display: flex; flex-direction: column; }
+.ruled-line {
+  width: 100%;
+  height: 29px;
+  border: none;
+  border-bottom: 1.5px solid var(--muted-border);
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  padding: 0 4px;
+}
+.ruled-line:focus { outline: none; border-bottom-color: var(--focus); }
+.ruled-add { align-self: flex-end; margin-top: 6px; opacity: 0.35; }
+.ruled-lines:hover .ruled-add, .ruled-add:focus-visible { opacity: 1; }
+
+.ship-megadamage { --md-pad: 20px; padding: 26px 12px 56px var(--md-pad); }
+.megadamage-list { display: flex; flex-direction: column; gap: 9px; }
+.megadamage-row { position: relative; }
+.megadamage-bullet {
+  position: absolute;
+  left: calc(-1 * var(--md-pad) - 10.5px);
+  top: 0;
+  width: 18px; height: 18px;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+}
+.megadamage-bullet.active { background: var(--ink); }
+.megadamage-title {
+  font-family: "Poppins", system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 12px;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.megadamage-text { font-size: 11px; line-height: 1.25; margin-top: 2px; }
+.ship-hull {
+  position: absolute;
+  left: 50%; bottom: -26px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.ship-hull .stat-label { font-size: 11px; }
+
+.ship-deckplan { padding: 0; overflow: hidden; display: flex; flex-direction: column; min-height: 400px; }
+.ship-deckplan-title {
+  position: absolute;
+  top: 10px; left: 16px;
+  z-index: 1;
+  font-family: "Poppins", system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+.deckplan-area {
+  flex: 1;
+  width: 100%;
+  resize: none;
+  border: none;
+  border-radius: 0;
+  padding: 40px 20px 20px;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink);
+  background-color: transparent;
+  background-image: linear-gradient(var(--muted-border) 1px, transparent 1px), linear-gradient(90deg, var(--muted-border) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-attachment: local;
+}
+.deckplan-area:focus { outline: none; }
+
+.ship-cargo { display: flex; flex-direction: column; gap: 12px; padding-bottom: 28px; }
+.ship-cargo-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.ship-cargo .pill-block { align-items: flex-start; margin-bottom: 4px; }
+.ship-repairs-title {
+  text-align: center;
+  font-family: "Poppins", system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 999px) {
+  .ship-sheet {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas:
+      "id    id"
+      "stats o2"
+      "fuel  pods"
+      "weap  weap"
+      "crew  crew"
+      "mega  mega"
+      "deck  deck"
+      "cargo cargo";
+  }
+  .ship-stats { flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
+  .ship-stats .ship-grey-title { flex: 0 0 100%; margin-bottom: 0; }
+  .ship-stat-row { width: auto; }
+}
+@media (max-width: 560px) {
+  .ship-sheet { grid-template-columns: minmax(0, 1fr); grid-template-areas: "id" "stats" "o2" "fuel" "pods" "weap" "crew" "mega" "deck" "cargo"; }
+  .ship-cargo-cols { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- roster: ships ---------- */
+.roster-add-buttons { display: flex; gap: 6px; }
+.roster-kind-badge {
+  flex: none;
+  border: 2px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

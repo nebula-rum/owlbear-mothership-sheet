@@ -17,6 +17,9 @@ const ROOM_KEYS = {
 function characterKey(id) {
   return "com.mothership.sheet/character/" + id;
 }
+function shipKey(id) {
+  return "com.mothership.sheet/ship/" + id;
+}
 
 /* =========================================================================
    Reference data: classes
@@ -267,7 +270,92 @@ const STRINGS = {
   or: { en: "or", it: "o" },
   clickToClear: { en: "Click to clear", it: "Tocca per annullare" },
   takeAs: { en: "Take as", it: "Prendi come" },
+  // Ship manifest (Italian is a first draft — not from the reviewed glossary)
+  shipManifest: { en: "Ship Manifest", it: "Manifesto della Nave" },
+  shipTransponder: { en: "Transponder", it: "Transponder" },
+  shipOn: { en: "On", it: "On" },
+  shipOff: { en: "Off", it: "Off" },
+  shipIdentifier: { en: "Ship Identifier", it: "Identificativo della Nave" },
+  shipCaptain: { en: "Captain", it: "Capitano" },
+  shipMakeModel: { en: "Make / Model / Jump / Class / Type", it: "Marca / Modello / Salto / Classe / Tipo" },
+  shipStatsSaves: { en: "Stats & Saves", it: "Caratteristiche e Tiri Salvezza" },
+  shipThrusters: { en: "Thrusters", it: "Propulsori" },
+  shipBattle: { en: "Battle", it: "Battaglia" },
+  shipSystems: { en: "Systems", it: "Sistemi" },
+  shipO2: { en: "O2 Remaining", it: "O2 Rimanente" },
+  shipFuel: { en: "Fuel", it: "Carburante" },
+  shipWarpCores: { en: "Warp Cores", it: "Nuclei Warp" },
+  shipCryopods: { en: "Cryopods", it: "Criocapsule" },
+  shipEscapePods: { en: "Escape Pods", it: "Capsule di Salvataggio" },
+  shipMegadamage: { en: "Megadamage", it: "Megadanno" },
+  shipHardpoints: { en: "Hardpoints", it: "Punti di Aggancio" },
+  shipBase: { en: "Base", it: "Base" },
+  shipTotal: { en: "Total", it: "Totale" },
+  shipInstalled: { en: "Installed", it: "Installati" },
+  shipCrew: { en: "Crew", it: "Equipaggio" },
+  shipHullPoints: { en: "Hull Points", it: "Punti Scafo" },
+  shipDeckplan: { en: "Deckplan", it: "Pianta dei Ponti" },
+  shipDeckplanPlaceholder: {
+    en: "Sketch the deck layout — rooms, corridors, airlocks…",
+    it: "Schizza la pianta dei ponti — stanze, corridoi, portelli…",
+  },
+  shipUpgrades: { en: "Upgrades", it: "Potenziamenti" },
+  shipCargo: { en: "Cargo", it: "Carico" },
+  shipRepairs: { en: "Repairs", it: "Riparazioni" },
+  shipMinor: { en: "Minor", it: "Minori" },
+  shipMajor: { en: "Major", it: "Maggiori" },
+  shipAddLine: { en: "Add line", it: "Aggiungi riga" },
 };
+
+/* The nine Megadamage effects printed down the left side of the Ship Manifest. The
+   bullet beside each one is a plain on/off marker for "this has happened to the ship". */
+const SHIP_MEGADAMAGE = [
+  {
+    title: { en: "Emergency Fuel Leak", it: "Perdita di Carburante" },
+    text: { en: "Every time you spend fuel, you spend 1 more.", it: "Ogni volta che spendi carburante, ne spendi 1 in più." },
+  },
+  {
+    title: { en: "Weapons Offline", it: "Armi Offline" },
+    text: { en: "Automatically fail Battle Checks.", it: "Fallisci automaticamente le prove di Battaglia." },
+  },
+  {
+    title: { en: "Navigation Offline", it: "Navigazione Offline" },
+    text: {
+      en: "Cannot make Thruster Checks. 10% chance all navigation data wiped.",
+      it: "Impossibile effettuare prove di Propulsori. 10% di probabilità che tutti i dati di navigazione vengano cancellati.",
+    },
+  },
+  {
+    title: { en: "Fire on Deck", it: "Incendio a Bordo" },
+    text: {
+      en: "Fire spreads rapidly throughout ship's interior. Toxic and corrosive (10 DMG/round) atmosphere.",
+      it: "Il fuoco si propaga rapidamente in tutto l'interno della nave. Atmosfera tossica e corrosiva (10 danni/round).",
+    },
+  },
+  {
+    title: { en: "Hull Breach", it: "Falla nello Scafo" },
+    text: {
+      en: "All aboard make a Body Save or take 1 Wound (Explosion). Critical Failure = violently sucked into space.",
+      it: "Tutti a bordo effettuano una salvezza di corpo o subiscono 1 Ferita (Esplosione). Fallimento critico = risucchiati violentemente nello spazio.",
+    },
+  },
+  {
+    title: { en: "Life Support Systems Offline", it: "Sistemi di Supporto Vitale Offline" },
+    text: { en: "Oxygen limited to 1d10 x Crew Capacity.", it: "Ossigeno limitato a 1d10 x Capacità dell'Equipaggio." },
+  },
+  {
+    title: { en: "Radiation Leak", it: "Perdita di Radiazioni" },
+    text: { en: "Radiation level increases every 2d10 minutes.", it: "Il livello di radiazioni aumenta ogni 2d10 minuti." },
+  },
+  {
+    title: { en: "Dead in the Water", it: "Nave alla Deriva" },
+    text: { en: "All systems offline, emergency power only.", it: "Tutti i sistemi offline, solo alimentazione d'emergenza." },
+  },
+  {
+    title: { en: "Abandon Ship!", it: "Abbandonare la Nave!" },
+    text: { en: "Ship is destroyed in 1d10 minutes.", it: "La nave viene distrutta in 1d10 minuti." },
+  },
+];
 
 /* ---------- generic dom helper ---------- */
 function el(tag, attrs = {}, children = []) {
@@ -433,8 +521,9 @@ let selfName = "";
 let selfRole = "PLAYER";
 let partyPlayers = [];
 
-let activeTab = "sheet"; // "sheet" | "roster"
+let activeTab = "sheet"; // "sheet" | "ship" | "roster"
 let activeCharacterId = null;
+let activeShipId = null;
 let expandedRosterId = null;
 
 // Set for the duration of a single renderCharacterSheet() call when the viewer is a
@@ -542,8 +631,10 @@ async function saveRoomKey(key) {
 }
 
 /* ---------- roster (GM-managed index) ---------- */
-function defaultRosterEntry(id) {
-  return { id, access: "gm", ownerId: null, locked: false };
+// `kind` tells characters and ships apart in the one shared roster — entries saved before
+// ships existed have no `kind`, and normalizeRoster() reads that as "character".
+function defaultRosterEntry(id, kind = "character") {
+  return { id, kind, access: "gm", ownerId: null, locked: false };
 }
 function normalizeRoster(raw) {
   if (!Array.isArray(raw)) return [];
@@ -551,6 +642,7 @@ function normalizeRoster(raw) {
     .filter((r) => r && r.id)
     .map((r) => ({
       id: r.id,
+      kind: r.kind === "ship" ? "ship" : "character",
       access: ["gm", "everyone", "assigned"].includes(r.access) ? r.access : "gm",
       ownerId: typeof r.ownerId === "string" ? r.ownerId : null,
       locked: !!r.locked,
@@ -568,10 +660,16 @@ function updateRoster(mutator) {
   roomMeta[ROOM_KEYS.roster] = r;
   scheduleRoomSave(ROOM_KEYS.roster);
 }
-function accessibleCharacterIds(playerId) {
+function accessibleEntryIds(playerId, kind) {
   return getRoster()
-    .filter((r) => r.access === "everyone" || (r.access === "assigned" && r.ownerId === playerId))
+    .filter((r) => r.kind === kind && (r.access === "everyone" || (r.access === "assigned" && r.ownerId === playerId)))
     .map((r) => r.id);
+}
+function accessibleCharacterIds(playerId) {
+  return accessibleEntryIds(playerId, "character");
+}
+function accessibleShipIds(playerId) {
+  return accessibleEntryIds(playerId, "ship");
 }
 function connectedPlayers() {
   const others = partyPlayers.filter((p) => p.id !== selfId).map((p) => ({ id: p.id, name: p.name }));
@@ -666,6 +764,75 @@ function toggleCharacterSkill(character, save, skillId, tier) {
   refreshTabContent();
 }
 
+/* ---------- ship data model ---------- */
+// The manifest's ruled-line lists (crew, weapons, upgrades, cargo, repairs) are plain
+// strings, one per line, never shorter than the printed sheet's own line count — a
+// "+" under each list adds more lines past that.
+const SHIP_LIST_LINES = { weapons: 7, crew: 10, upgrades: 7, cargo: 8, minor: 5, major: 5 };
+function defaultShip(id) {
+  const lists = {};
+  Object.keys(SHIP_LIST_LINES).forEach((k) => { lists[k] = Array(SHIP_LIST_LINES[k]).fill(""); });
+  return {
+    id,
+    identifier: "",
+    captain: "",
+    makeModel: "",
+    transponder: "", // "on" | "off" | "" (neither marked, like the blank sheet)
+    thrusters: "",
+    battle: "",
+    systems: "",
+    o2: "",
+    fuel: { current: "", max: "" },
+    warpCores: "",
+    cryopods: "",
+    escapePods: "",
+    weapons: { base: "", total: "" },
+    megadamage: { base: "", total: "" },
+    hardpoints: { installed: "", max: "" },
+    crew: { current: "", max: "" },
+    upgrades: { installed: "", max: "" },
+    hullPoints: "",
+    megadamageEffects: SHIP_MEGADAMAGE.map(() => false),
+    deckplan: "",
+    lists,
+  };
+}
+function normalizeShip(raw, id) {
+  const base = defaultShip(id);
+  const r = raw || {};
+  const ship = Object.assign(base, r);
+  ship.id = id;
+  ship.transponder = r.transponder === "on" || r.transponder === "off" ? r.transponder : "";
+  ["fuel", "weapons", "megadamage", "hardpoints", "crew", "upgrades"].forEach((k) => {
+    ship[k] = Object.assign({}, defaultShip(id)[k], r[k]);
+  });
+  ship.megadamageEffects = SHIP_MEGADAMAGE.map((_, i) => !!(Array.isArray(r.megadamageEffects) && r.megadamageEffects[i]));
+  ship.lists = {};
+  Object.keys(SHIP_LIST_LINES).forEach((k) => {
+    const saved = r.lists && Array.isArray(r.lists[k]) ? r.lists[k].map((x) => (typeof x === "string" ? x : "")) : [];
+    while (saved.length < SHIP_LIST_LINES[k]) saved.push("");
+    ship.lists[k] = saved;
+  });
+  return ship;
+}
+function getShip(id) {
+  return normalizeShip(roomMeta[shipKey(id)], id);
+}
+// Same reused-object-identity pattern as bindCharacter() — see its comment — except a
+// raw object loaded from room metadata is normalized once first (then remembered in
+// `normalizedShips`), so a ship saved before a field existed can't hit an undefined one.
+const normalizedShips = new WeakSet();
+function bindShip(id) {
+  const key = shipKey(id);
+  let ship = roomMeta[key];
+  if (!ship || !normalizedShips.has(ship)) {
+    ship = getShip(id);
+    normalizedShips.add(ship);
+    roomMeta[key] = ship;
+  }
+  return { ship, save: () => scheduleRoomSave(key) };
+}
+
 /* =========================================================================
    Top-level render
    ========================================================================= */
@@ -679,6 +846,7 @@ function renderApp() {
   }
 
   if (activeTab === "roster" && !isGM()) activeTab = "sheet";
+  if (activeTab === "ship" && accessibleShipIds(selfId).length === 0) activeTab = "sheet";
 
   app.appendChild(renderTopbar());
   const content = el("div", { id: "tab-content" });
@@ -694,6 +862,7 @@ function refreshTabContent() {
 }
 function renderActiveTab() {
   if (activeTab === "roster" && isGM()) return renderRosterTab();
+  if (activeTab === "ship") return renderShipTab();
   return renderMySheetTab();
 }
 
@@ -732,6 +901,15 @@ function renderTopbar() {
       onclick: () => { activeTab = "sheet"; renderApp(); },
     }),
   ];
+  if (accessibleShipIds(selfId).length > 0) {
+    tabButtons.push(
+      el("button", {
+        class: "tab-btn" + (activeTab === "ship" ? " active" : ""),
+        text: "Ship",
+        onclick: () => { activeTab = "ship"; renderApp(); },
+      })
+    );
+  }
   if (isGM()) {
     tabButtons.push(
       el("button", {
@@ -758,7 +936,8 @@ function renderTopbar() {
       onclick: () => setSheetView("advanced"),
     }),
   ]);
-  controls.appendChild(viewToggle);
+  // Basic/Advanced only means something for character sheets; the ship manifest has one layout.
+  if (activeTab !== "ship") controls.appendChild(viewToggle);
   const localeToggle = el("div", { class: "view-toggle" }, [
     el("button", { class: locale === "en" ? "active" : "", text: "EN", title: "English", onclick: () => setLocale("en") }),
     el("button", { class: locale === "it" ? "active" : "", text: "IT", title: "Italiano", onclick: () => setLocale("it") }),
@@ -817,6 +996,41 @@ function renderMySheetTab() {
   return wrap;
 }
 
+function renderShipTab() {
+  const wrap = el("div");
+  const ids = accessibleShipIds(selfId);
+  if (ids.length === 0) {
+    wrap.appendChild(el("div", { class: "party-empty", text: "Your GM hasn't assigned you a ship yet." }));
+    return wrap;
+  }
+  if (!activeShipId || !ids.includes(activeShipId)) activeShipId = ids[0];
+  if (ids.length > 1) {
+    const picker = el("div", { class: "tabs" });
+    ids.forEach((id) => {
+      picker.appendChild(
+        el("button", {
+          class: "tab-btn" + (id === activeShipId ? " active" : ""),
+          text: getShip(id).identifier || "Unnamed ship",
+          onclick: () => { activeShipId = id; refreshTabContent(); },
+        })
+      );
+    });
+    wrap.appendChild(el("div", { class: "section-title" }, [picker]));
+  }
+
+  const entry = rosterEntryFor(activeShipId);
+  sheetLocked = !isGM() && !!entry && entry.locked;
+  if (sheetLocked) {
+    wrap.appendChild(
+      el("div", { class: "locked-banner" }, [lockIcon(true), el("span", { text: "Locked by your GM — you can view this ship, but not edit it." })])
+    );
+  }
+  const { ship, save } = bindShip(activeShipId);
+  wrap.appendChild(renderShipSheet(ship, save));
+  sheetLocked = false;
+  return wrap;
+}
+
 function renderCharacterSheet(character, save) {
   return sheetView === "basic" ? renderCharacterSheetBasic(character, save) : renderCharacterSheetAdvanced(character, save);
 }
@@ -870,9 +1084,9 @@ function numberCircle(labelText, value, onInput, opts = {}) {
 function statusPillField(labelText, current, second, onCurrent, onSecond, opts = {}) {
   const locked = sheetLocked;
   const block = el("div", { class: "pill-block" });
-  block.appendChild(el("div", { class: "stat-label", text: labelText }));
+  if (labelText) block.appendChild(el("div", { class: "stat-label", text: labelText }));
 
-  const pill = el("div", { class: "status-pill" });
+  const pill = el("div", { class: "status-pill" + (opts.single ? " single" : "") });
   const stepper = el("div", { class: "pill-stepper" });
   const step = (delta) => {
     if (locked) return;
@@ -884,11 +1098,15 @@ function statusPillField(labelText, current, second, onCurrent, onSecond, opts =
   stepper.appendChild(el("button", { type: "button", class: "pill-step-btn down", title: "Decrease", disabled: locked || undefined, onclick: () => step(-1) }));
   pill.appendChild(stepper);
   pill.appendChild(el("input", { type: "text", inputmode: "numeric", value: current || "", disabled: locked || undefined, oninput: (e) => onCurrent(e.target.value) }));
-  pill.appendChild(el("span", { class: "pill-divider", text: "/" }));
-  pill.appendChild(el("input", { type: "text", inputmode: "numeric", value: second || "", disabled: locked || undefined, oninput: (e) => onSecond(e.target.value) }));
+  if (!opts.single) {
+    pill.appendChild(el("span", { class: "pill-divider", text: "/" }));
+    pill.appendChild(el("input", { type: "text", inputmode: "numeric", value: second || "", disabled: locked || undefined, oninput: (e) => onSecond(e.target.value) }));
+  }
   block.appendChild(pill);
 
-  block.appendChild(el("div", { class: "pill-caption" }, [el("span", { text: t("current") }), el("span", { text: opts.secondLabel || t("max") })]));
+  if (!opts.single) {
+    block.appendChild(el("div", { class: "pill-caption" }, [el("span", { text: opts.firstLabel || t("current") }), el("span", { text: opts.secondLabel || t("max") })]));
+  }
   return block;
 }
 
@@ -1414,51 +1632,300 @@ function statusReportRow(character, save, keys) {
 }
 
 /* =========================================================================
+   Ship Manifest
+   Laid out like the printed sheet (see .ship-sheet in style.css): identity block and
+   Megadamage list down the left, Stats & Saves / Fuel / Weapons across the middle, Crew
+   on the right, Deckplan and Upgrades/Cargo/Repairs along the bottom. Panels titled in
+   their own top border, like the PDF, rather than with the character sheet's dark bars.
+   ========================================================================= */
+function shipPanel(areaClass, title, children) {
+  const panel = el("div", { class: "ship-panel " + areaClass });
+  if (title) panel.appendChild(el("div", { class: "ship-panel-titles" }, [el("span", { class: "ship-panel-title", text: title })]));
+  children.forEach((c) => panel.appendChild(c));
+  return panel;
+}
+// Several titles sharing one panel's top (or bottom) border, one per column of content below.
+function shipPanelTitleRow(titles, edge = "top") {
+  return el(
+    "div",
+    { class: "ship-panel-titles multi " + edge, style: `grid-template-columns: repeat(${titles.length}, minmax(0, 1fr));` },
+    titles.map((x) => el("span", { class: "ship-panel-title", text: x }))
+  );
+}
+function shipGreyPanel(areaClass, children) {
+  return el("div", { class: "ship-grey " + areaClass }, children);
+}
+function shipCircle(label, value, onInput) {
+  return numberCircle(label, value, onInput);
+}
+function shipPill(label, obj, firstKey, secondKey, firstLabel, secondLabel, save) {
+  return statusPillField(
+    label,
+    obj[firstKey],
+    obj[secondKey],
+    (v) => { obj[firstKey] = v; save(); },
+    (v) => { obj[secondKey] = v; save(); },
+    { firstLabel, secondLabel }
+  );
+}
+function ruledLines(ship, save, key) {
+  const locked = sheetLocked;
+  const lines = ship.lists[key];
+  const wrap = el("div", { class: "ruled-lines" });
+  lines.forEach((text, i) => {
+    wrap.appendChild(
+      el("input", {
+        type: "text",
+        class: "ruled-line",
+        value: text,
+        disabled: locked || undefined,
+        oninput: (e) => { lines[i] = e.target.value; save(); },
+      })
+    );
+  });
+  wrap.appendChild(
+    el("button", {
+      type: "button",
+      class: "list-add-btn ruled-add",
+      title: t("shipAddLine"),
+      disabled: locked || undefined,
+      onclick: () => { lines.push(""); save(); refreshTabContent(); },
+    }, ["+"])
+  );
+  return wrap;
+}
+
+function shipLogoBox() {
+  const box = el("div", { class: "ship-logo" });
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("viewBox", "0 0 32 32");
+  svg.innerHTML =
+    '<path d="M7.08 25.45 L7.08 7.08 L16 20.2 L24.92 7.08 L24.92 25.45" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="square" stroke-linejoin="miter"/>' +
+    '<path d="M8.39 25.45 L8.39 11.34 L16 22.54 L23.61 11.34 L23.61 25.45" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="square" stroke-linejoin="miter"/>' +
+    '<path d="M9.7 25.45 L9.7 15.61 L16 24.86 L22.3 15.61 L22.3 25.45" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="square" stroke-linejoin="miter"/>';
+  box.appendChild(svg);
+  box.appendChild(el("div", { class: "ship-logo-text" }, [el("span", { text: "Mothership®" }), el("span", { text: t("shipManifest") })]));
+  return box;
+}
+function transponderToggle(ship, save) {
+  const locked = sheetLocked;
+  const wrap = el("div", { class: "transponder-toggle" });
+  [["on", "shipOn"], ["off", "shipOff"]].forEach(([value, labelKey]) => {
+    wrap.appendChild(
+      el(
+        "button",
+        {
+          type: "button",
+          class: "transponder-dot" + (ship.transponder === value ? " active" : ""),
+          disabled: locked || undefined,
+          onclick: () => {
+            ship.transponder = ship.transponder === value ? "" : value; // same value again clears it
+            save();
+            refreshTabContent();
+          },
+        },
+        [el("span", { class: "transponder-dot-circle" }), el("span", { class: "transponder-dot-label", text: t(labelKey) })]
+      )
+    );
+  });
+  return wrap;
+}
+function shipIdBlock(ship, save) {
+  const wrap = el("div", { class: "ship-id" });
+  wrap.appendChild(shipLogoBox());
+  const block = el("div", { class: "dark-block ship-transponder" });
+  block.appendChild(
+    el("div", { class: "ship-transponder-head" }, [el("span", { class: "ship-transponder-title", text: t("shipTransponder") }), transponderToggle(ship, save)])
+  );
+  block.appendChild(textField(t("shipIdentifier"), ship.identifier, (v) => { ship.identifier = v; save(); }));
+  block.appendChild(textField(t("shipCaptain"), ship.captain, (v) => { ship.captain = v; save(); }));
+  block.appendChild(textAreaField(t("shipMakeModel"), ship.makeModel, (v) => { ship.makeModel = v; save(); }, { tall: true }));
+  block.appendChild(el("span", { class: "ship-arrow to-stats" }));
+  wrap.appendChild(block);
+  return wrap;
+}
+function shipStatsPanel(ship, save) {
+  const row = (key, labelKey, withArrow) => {
+    const r = el("div", { class: "ship-stat-row" }, [shipCircle(t(labelKey), ship[key], (v) => { ship[key] = v; save(); })]);
+    if (withArrow) r.appendChild(el("span", { class: "ship-arrow " + withArrow }));
+    return r;
+  };
+  return shipGreyPanel("ship-stats", [
+    el("div", { class: "ship-grey-title", text: t("shipStatsSaves") }),
+    row("thrusters", "shipThrusters", "to-fuel"),
+    row("battle", "shipBattle", "to-weapons"),
+    row("systems", "shipSystems", null),
+  ]);
+}
+function shipFuelPanel(ship, save) {
+  return shipGreyPanel("ship-fuel", [
+    shipPill(t("shipFuel"), ship.fuel, "current", "max", t("current"), t("max"), save),
+    shipCircle(t("shipWarpCores"), ship.warpCores, (v) => { ship.warpCores = v; save(); }),
+  ]);
+}
+function shipPodsPanel(ship, save) {
+  return shipGreyPanel("ship-pods", [
+    shipCircle(t("shipCryopods"), ship.cryopods, (v) => { ship.cryopods = v; save(); }),
+    shipCircle(t("shipEscapePods"), ship.escapePods, (v) => { ship.escapePods = v; save(); }),
+  ]);
+}
+function shipO2Panel(ship, save) {
+  return shipGreyPanel("ship-o2", [shipCircle(t("shipO2"), ship.o2, (v) => { ship.o2 = v; save(); })]);
+}
+function shipWeaponsPanel(ship, save) {
+  const panel = el("div", { class: "ship-panel ship-weapons" });
+  panel.appendChild(shipPanelTitleRow([t("weapons"), t("shipMegadamage"), t("shipHardpoints")]));
+  panel.appendChild(
+    el("div", { class: "ship-triple" }, [
+      shipPill(null, ship.weapons, "base", "total", t("shipBase"), t("shipTotal"), save),
+      shipPill(null, ship.megadamage, "base", "total", t("shipBase"), t("shipTotal"), save),
+      shipPill(null, ship.hardpoints, "installed", "max", t("shipInstalled"), t("max"), save),
+    ])
+  );
+  panel.appendChild(ruledLines(ship, save, "weapons"));
+  return panel;
+}
+function shipCrewPanel(ship, save) {
+  return shipPanel("ship-crew", t("shipCrew"), [
+    shipPill(null, ship.crew, "current", "max", t("current"), t("max"), save),
+    ruledLines(ship, save, "crew"),
+  ]);
+}
+function shipMegadamagePanel(ship, save) {
+  const locked = sheetLocked;
+  const panel = shipPanel("ship-megadamage", t("shipMegadamage"), []);
+  const list = el("div", { class: "megadamage-list" });
+  SHIP_MEGADAMAGE.forEach((m, i) => {
+    const num = String(i + 1).padStart(2, "0") + (i === SHIP_MEGADAMAGE.length - 1 ? "+" : "");
+    const active = ship.megadamageEffects[i];
+    list.appendChild(
+      el("div", { class: "megadamage-row" }, [
+        el("button", {
+          type: "button",
+          class: "megadamage-bullet" + (active ? " active" : ""),
+          disabled: locked || undefined,
+          onclick: () => { ship.megadamageEffects[i] = !ship.megadamageEffects[i]; save(); refreshTabContent(); },
+        }),
+        el("div", { class: "megadamage-title", text: `${num} ${L(m.title)}` }),
+        el("div", { class: "megadamage-text", text: L(m.text) }),
+      ])
+    );
+  });
+  panel.appendChild(list);
+  const hull = el("div", { class: "ship-hull" }, [
+    el("div", { class: "stat-label", text: t("shipHullPoints") }),
+  ]);
+  hull.appendChild(
+    statusPillField(null, ship.hullPoints, "", (v) => { ship.hullPoints = v; save(); }, () => {}, { single: true })
+  );
+  panel.appendChild(hull);
+  return panel;
+}
+function shipDeckplanPanel(ship, save) {
+  const panel = el("div", { class: "ship-panel ship-deckplan" });
+  panel.appendChild(el("div", { class: "ship-deckplan-title", text: t("shipDeckplan") }));
+  panel.appendChild(
+    el("textarea", {
+      class: "deckplan-area",
+      placeholder: t("shipDeckplanPlaceholder"),
+      spellcheck: "false",
+      disabled: sheetLocked || undefined,
+      oninput: (e) => { ship.deckplan = e.target.value; save(); },
+    })
+  );
+  panel.querySelector("textarea").value = ship.deckplan || "";
+  return panel;
+}
+function shipCargoPanel(ship, save) {
+  const panel = el("div", { class: "ship-panel ship-cargo" });
+  panel.appendChild(shipPanelTitleRow([t("shipUpgrades"), t("shipCargo")]));
+  panel.appendChild(
+    el("div", { class: "ship-cargo-cols" }, [
+      el("div", {}, [shipPill(null, ship.upgrades, "installed", "max", t("shipInstalled"), t("max"), save), ruledLines(ship, save, "upgrades")]),
+      el("div", {}, [ruledLines(ship, save, "cargo")]),
+    ])
+  );
+  panel.appendChild(el("div", { class: "ship-repairs-title", text: t("shipRepairs") }));
+  panel.appendChild(
+    el("div", { class: "ship-cargo-cols" }, [
+      el("div", {}, [ruledLines(ship, save, "minor")]),
+      el("div", {}, [ruledLines(ship, save, "major")]),
+    ])
+  );
+  panel.appendChild(shipPanelTitleRow([t("shipMinor"), t("shipMajor")], "bottom"));
+  return panel;
+}
+function renderShipSheet(ship, save) {
+  const sheet = el("div", { class: "ship-sheet" });
+  sheet.appendChild(shipIdBlock(ship, save));
+  sheet.appendChild(shipStatsPanel(ship, save));
+  sheet.appendChild(shipFuelPanel(ship, save));
+  sheet.appendChild(shipPodsPanel(ship, save));
+  sheet.appendChild(shipWeaponsPanel(ship, save));
+  sheet.appendChild(shipCrewPanel(ship, save));
+  sheet.appendChild(shipO2Panel(ship, save));
+  sheet.appendChild(shipMegadamagePanel(ship, save));
+  sheet.appendChild(shipDeckplanPanel(ship, save));
+  sheet.appendChild(shipCargoPanel(ship, save));
+  return sheet;
+}
+
+/* =========================================================================
    Roster tab (GM only)
    ========================================================================= */
 function renderRosterTab() {
   // The GM's own editor is never subject to a character's lock — only players are.
   sheetLocked = false;
   const wrap = el("div", { class: "section-title-wrap" });
+  const addEntry = (kind) => {
+    const id = uid();
+    updateRoster((r) => r.push(defaultRosterEntry(id, kind)));
+    const key = kind === "ship" ? shipKey(id) : characterKey(id);
+    roomMeta[key] = kind === "ship" ? defaultShip(id) : defaultCharacter(id);
+    normalizedShips.add(roomMeta[key]);
+    scheduleRoomSave(key);
+    expandedRosterId = id;
+    refreshTabContent();
+  };
   const title = el("div", { class: "section-title" }, [
     el("span", { text: "Roster" }),
-    el("button", {
-      class: "btn small",
-      text: "+ Add Character",
-      onclick: () => {
-        const id = uid();
-        updateRoster((r) => r.push(defaultRosterEntry(id)));
-        roomMeta[characterKey(id)] = defaultCharacter(id);
-        scheduleRoomSave(characterKey(id));
-        expandedRosterId = id;
-        refreshTabContent();
-      },
-    }),
+    el("div", { class: "roster-add-buttons" }, [
+      el("button", { class: "btn small", text: "+ Add Character", onclick: () => addEntry("character") }),
+      el("button", { class: "btn small", text: "+ Add Ship", onclick: () => addEntry("ship") }),
+    ]),
   ]);
   wrap.appendChild(title);
-  wrap.appendChild(el("div", { class: "hint", text: "Add a character for each Hero, then assign who can see and edit it. Players won't see anything on the Character tab until you do." }));
+  wrap.appendChild(el("div", { class: "hint", text: "Add a character for each Hero (and a ship, if you use one), then assign who can see and edit it — for a ship, the captain, or everyone. Players won't see anything on their tabs until you do." }));
 
   const roster = getRoster();
   if (roster.length === 0) {
-    wrap.appendChild(el("div", { class: "party-empty", text: "No characters yet." }));
+    wrap.appendChild(el("div", { class: "party-empty", text: "No characters or ships yet." }));
     return wrap;
   }
   const players = connectedPlayers();
 
   roster.forEach((entry) => {
-    const character = getCharacter(entry.id);
+    const isShip = entry.kind === "ship";
     const rowWrap = el("div", { class: "roster-item" });
     const row = el("div", { class: "roster-row" });
+    if (isShip) row.appendChild(el("span", { class: "roster-kind-badge", text: "Ship" }));
     row.appendChild(
       el("input", {
         type: "text",
         class: "field-input",
-        placeholder: "Character name",
-        value: character.name,
+        placeholder: isShip ? "Ship identifier" : "Character name",
+        value: isShip ? getShip(entry.id).identifier : getCharacter(entry.id).name,
         oninput: (e) => {
-          const { character: c, save } = bindCharacter(entry.id);
-          c.name = e.target.value;
-          save();
+          if (isShip) {
+            const { ship, save } = bindShip(entry.id);
+            ship.identifier = e.target.value;
+            save();
+          } else {
+            const { character: c, save } = bindCharacter(entry.id);
+            c.name = e.target.value;
+            save();
+          }
         },
       })
     );
@@ -1483,6 +1950,7 @@ function renderRosterTab() {
               else if (v === "everyone") { target.access = "everyone"; target.ownerId = null; }
               else { target.access = "assigned"; target.ownerId = v; }
             });
+            renderApp(); // the topbar's Ship tab depends on who can see which ship
           },
         },
         accessOptions
@@ -1517,17 +1985,18 @@ function renderRosterTab() {
     row.appendChild(
       el("button", {
         class: "trash-btn",
-        title: "Remove character",
+        title: isShip ? "Remove ship" : "Remove character",
         onclick: () => {
-          showConfirmDialog("Remove this character? This cannot be undone.", () => {
+          showConfirmDialog(isShip ? "Remove this ship? This cannot be undone." : "Remove this character? This cannot be undone.", () => {
             updateRoster((r) => {
               const idx = r.findIndex((x) => x.id === entry.id);
               if (idx >= 0) r.splice(idx, 1);
             });
-            delete roomMeta[characterKey(entry.id)];
-            scheduleRoomSave(characterKey(entry.id));
+            const key = isShip ? shipKey(entry.id) : characterKey(entry.id);
+            delete roomMeta[key];
+            scheduleRoomSave(key);
             if (expandedRosterId === entry.id) expandedRosterId = null;
-            refreshTabContent();
+            renderApp();
           });
         },
       }, [trashIcon()])
@@ -1535,9 +2004,14 @@ function renderRosterTab() {
     rowWrap.appendChild(row);
 
     if (expanded) {
-      const { character: liveCharacter, save } = bindCharacter(entry.id);
       const editorBox = el("div", { class: "roster-editor" });
-      editorBox.appendChild(renderCharacterSheet(liveCharacter, save));
+      if (isShip) {
+        const { ship, save } = bindShip(entry.id);
+        editorBox.appendChild(renderShipSheet(ship, save));
+      } else {
+        const { character: liveCharacter, save } = bindCharacter(entry.id);
+        editorBox.appendChild(renderCharacterSheet(liveCharacter, save));
+      }
       rowWrap.appendChild(editorBox);
     }
     wrap.appendChild(rowWrap);
@@ -1582,6 +2056,7 @@ async function boot() {
   }
 
   await loadRoomMeta();
+  if (accessibleCharacterIds(selfId).length === 0 && accessibleShipIds(selfId).length > 0) activeTab = "ship";
   renderApp();
 }
 
