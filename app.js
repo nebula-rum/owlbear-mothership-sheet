@@ -1746,16 +1746,17 @@ function shipIdBlock(ship, save) {
   return wrap;
 }
 function shipStatsPanel(ship, save) {
-  const row = (key, labelKey, withArrow) => {
-    const r = el("div", { class: "ship-stat-row" }, [shipCircle(t(labelKey), ship[key], (v) => { ship[key] = v; save(); })]);
-    if (withArrow) r.appendChild(el("span", { class: "ship-arrow " + withArrow }));
+  const row = (key, labelKey, arrow, extraClass) => {
+    const r = el("div", { class: "ship-stat-row" + (extraClass ? " " + extraClass : "") }, [
+      shipCircle(t(labelKey), ship[key], (v) => { ship[key] = v; save(); }),
+    ]);
+    if (arrow) r.appendChild(el("span", { class: "ship-arrow " + arrow }));
     return r;
   };
   return shipGreyPanel("ship-stats", [
     el("div", { class: "ship-grey-title", text: t("shipStatsSaves") }),
-    row("thrusters", "shipThrusters", "to-fuel"),
-    row("battle", "shipBattle", "to-weapons"),
-    row("systems", "shipSystems", null),
+    row("thrusters", "shipThrusters", "to-fuel", "first"),
+    el("div", { class: "ship-stat-rest" }, [row("battle", "shipBattle", "to-weapons"), row("systems", "shipSystems", null)]),
   ]);
 }
 function shipFuelPanel(ship, save) {

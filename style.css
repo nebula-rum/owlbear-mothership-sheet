@@ -771,9 +771,12 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .ship-grey .stat-label { font-size: 10px; letter-spacing: 0.02em; max-width: 84px; line-height: 1.15; }
 .ship-grey .stat-circle { width: 52px; height: 52px; }
 .ship-grey .stat-circle input { font-size: 17px; }
+.ship-stats .stat-circle { width: 72px; height: 72px; }
+.ship-stats .stat-circle input { font-size: 22px; }
+.ship-stats .stat-label { font-size: 11px; max-width: 100px; }
 .ship-stats { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .ship-stat-row { position: relative; width: 100%; display: flex; justify-content: center; }
-.ship-fuel { display: flex; align-items: center; justify-content: space-around; gap: 10px; padding-top: 50px; }
+.ship-fuel { display: flex; align-items: center; justify-content: space-around; gap: 10px; }
 .ship-pods { display: flex; align-items: center; justify-content: space-around; gap: 8px; }
 .ship-o2 { display: flex; align-items: center; justify-content: center; }
 
@@ -789,9 +792,20 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   border-bottom: 5px solid transparent;
 }
 @media (min-width: 1000px) {
+  /* Row 1 (Fuel / Cryopods panels) is a fixed height so the Stats & Saves panel can use the
+     very same number for its first slot: the Thrusters circle is centered on the row's
+     midline, which is also where the (vertically centered) Fuel pill sits — that is what
+     keeps the Thrusters → Fuel arrow level. Battle and Systems share the rest of the panel
+     evenly. */
+  .ship-sheet { grid-template-rows: 168px auto auto auto; }
+  .ship-stats { position: relative; align-items: stretch; gap: 0; padding: 0 12px; }
+  .ship-stats .ship-grey-title { position: absolute; top: 12px; left: 12px; right: 12px; margin: 0; min-height: 0; }
+  /* 48px + the 72px circle's radius = 84px = half of the 168px row */
+  .ship-stat-row.first { flex: none; margin-top: 48px; }
+  .ship-stat-rest { flex: 1; display: flex; flex-direction: column; justify-content: space-evenly; }
   .ship-arrow { display: block; }
-  .ship-arrow.to-fuel { top: 25px; left: calc(50% + 38px); right: calc(-1 * (12px + var(--gap) + 12px)); }
-  .ship-arrow.to-weapons { top: 25px; left: calc(50% + 38px); right: calc(-1 * (12px + var(--gap) - 2px)); }
+  .ship-arrow.to-fuel { top: 35px; left: calc(50% + 40px); right: calc(-1 * (12px + var(--gap) + 12px)); }
+  .ship-arrow.to-weapons { top: 35px; left: calc(50% + 40px); right: calc(-1 * (12px + var(--gap) - 2px)); }
   .ship-arrow.to-stats { top: 62%; left: 100%; width: calc(var(--gap) + 10px); }
 }
 
@@ -932,7 +946,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .ship-cargo { display: flex; flex-direction: column; gap: 12px; padding-bottom: 28px; }
 .ship-cargo-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
-.ship-cargo .pill-block { align-items: flex-start; margin-bottom: 4px; }
+.ship-cargo .pill-block { margin-bottom: 4px; }
 .ship-repairs-title {
   text-align: center;
   font-family: "Poppins", system-ui, sans-serif;
@@ -957,6 +971,7 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   }
   .ship-stats { flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: flex-start; }
   .ship-stats .ship-grey-title { flex: 0 0 100%; margin-bottom: 0; }
+  .ship-stat-rest { display: contents; }
   .ship-stat-row { width: auto; }
 }
 @media (max-width: 560px) {

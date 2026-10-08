@@ -135,8 +135,12 @@ landscape PDF). Decisions worth knowing before changing it:
   border, and the Roster editor's backdrop is a different color. Stacks to 2 columns under
   1000px and 1 column under 560px; the three connecting arrows (Transponder → Stats & Saves,
   Thrusters → Fuel, Battle → Weapons) are pure CSS and only exist in the full layout.
-  The Thrusters → Fuel arrow only lines up because the Stats & Saves title is reserved two
-  lines tall in both languages and the Fuel panel's top padding is tuned to match.
+  The Thrusters → Fuel arrow only lines up because row 1 is a fixed 168px: the Fuel and
+  Cryopods panels center their content in it, and the Stats & Saves panel gives its first
+  circle a 48px top margin (+ the 72px circle's radius = 84px, half the row). Battle and
+  Systems then share the rest of the panel with `space-evenly`, so all three circle gaps
+  come out equal. If the row height or circle size changes, change those numbers together
+  (and the `.to-fuel` / `.to-weapons` arrow offsets, which are measured from the circle).
 - **Ruled-line lists** (crew, weapons, upgrades, cargo, minor/major repairs) are arrays of
   plain strings with the printed sheet's line count as a floor and a small "+" for more —
   not the `{id, text}` add/remove lists the character sheet uses — since the PDF's lines are
