@@ -771,9 +771,9 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .ship-grey .stat-label { font-size: 10px; letter-spacing: 0.02em; max-width: 84px; line-height: 1.15; }
 .ship-grey .stat-circle { width: 52px; height: 52px; }
 .ship-grey .stat-circle input { font-size: 17px; }
-.ship-stats .stat-circle { width: 72px; height: 72px; }
-.ship-stats .stat-circle input { font-size: 22px; }
-.ship-stats .stat-label { font-size: 11px; max-width: 100px; }
+.ship-stats .stat-circle, .ship-o2 .stat-circle { width: 72px; height: 72px; }
+.ship-stats .stat-circle input, .ship-o2 .stat-circle input { font-size: 22px; }
+.ship-stats .stat-label, .ship-o2 .stat-label { font-size: 11px; max-width: 100px; }
 .ship-stats { display: flex; flex-direction: column; align-items: center; gap: 12px; }
 .ship-stat-row { position: relative; width: 100%; display: flex; justify-content: center; }
 .ship-fuel { display: flex; align-items: center; justify-content: space-around; gap: 10px; }
